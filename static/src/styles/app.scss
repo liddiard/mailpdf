@@ -1,0 +1,180 @@
+// http://paletton.com/#uid=53m0u0kp+TueCX1kHVdvEQNMjGg
+$PRIMARY: #30c9e8;
+$SECONDARY: #00D72F;
+
+html {
+  box-sizing: border-box;
+}
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+body {
+  color: white;
+  background-color: $PRIMARY;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  margin: 2em;
+  border: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+    color: inherit;
+}
+
+button {
+    $border: 0.1em solid darken($SECONDARY, 10%);
+    color: white;
+    background-color: $SECONDARY;
+    font-weight: bold;
+    border: 0;
+    border-radius: 0.25em;
+    padding: 0.5em 0.75em;
+    cursor: pointer;
+    font-size: 1.5em;
+    border-top: $border;
+    border-top-color: $SECONDARY;
+    border-bottom: $border;
+    outline: none;
+
+    &:active {
+        $background-color: darken($SECONDARY, 5%);
+        background-color: $background-color;
+        border-top: $border;
+        border-bottom-color: $background-color;
+    }
+}
+
+input[type=text] {
+    border: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+    background-color: transparent;
+}
+
+header {
+    h1 {
+        margin: 0;
+    }
+
+    .tagline {
+        font-size: 1.5em;
+        margin-bottom: 0;
+    }
+
+    .pricing-details {
+        opacity: 0.75;
+    }
+}
+
+footer {
+    text-align: center;
+    font-size: 0.8em;
+    opacity: 0.75;
+    margin: 1em 0;
+}
+
+#envelope {
+    color: gray;
+    background-color: #fdfaf0;
+    padding: 1em 2em 4em;
+    box-shadow: 2px 2px 1px rgba(0,0,0, 0.25);
+    border: 1px solid rgba(255,255,255, 0.5);
+    position: relative;
+
+    .stamp {
+        float: right;
+        height: 200px;
+        transform: rotate(2deg);
+    }
+
+    .address {
+        $width: 33%;
+        width: $width;
+        margin: 2em;
+
+        &.to {
+            margin-left: calc(50% - #{$width / 2});
+        }
+
+        + .address {
+            margin-top: 3em;
+        }
+
+        h2 {
+            text-transform: capitalize;
+
+            .fa {
+                $border: 0.23em solid;
+                margin-left: 0.25em;
+                opacity: 0.5;
+
+                &.from {
+                    border-left: $border;
+                }
+
+                &.to {
+                    border-right: $border;
+                    letter-spacing: -0.05em;
+                }
+            }
+        }
+
+        input {
+            display: block;
+            font-size: 1.5em;
+            width: 100%;
+            padding: 0.25em;
+        }
+
+        .third-line {
+            display: flex;
+
+            input {
+                width: 30px;
+                flex-grow: 1;
+
+                &[name=state] {
+                    flex-grow: 0.25;
+                }
+
+                &[name=zip] {
+                    flex-grow: 0.5;
+                }
+            }
+        }
+    }
+}
+
+#pay-and-send {
+    margin: 2em 0;
+    text-align: center;
+
+    button {
+        .fa {
+            margin-left: 0.2em;
+        }
+    }
+
+    .total {
+        .price {
+            font-size: 1.5em;
+        }
+    }
+
+    .additions {
+        margin: 1em 0;
+
+        input {
+            margin-right: 0.5em;
+        }
+
+        label {
+            display: inline-block;
+            padding: 0.25em 0.5em;
+
+            .price {
+                opacity: 0.75;
+            }
+        }
+    }
+}
