@@ -1,5 +1,6 @@
 node_modules/
-static/uploads/
+dist/
+uploads/
 .DS_Store
 npm-debug.log
 
