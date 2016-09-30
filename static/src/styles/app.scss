@@ -1,6 +1,21 @@
 // http://paletton.com/#uid=53m0u0kp+TueCX1kHVdvEQNMjGg
 $PRIMARY: #30c9e8;
 $SECONDARY: #00D72F;
+$ERROR: #FF4430;
+$TEXT_SHADOW: 0 0 5px rgba(0, 0, 0, 0.25);
+$PLACEHOLDER_COLOR: rgba(0,0,0, 0.25);
+
+::-webkit-input-placeholder {
+   color: $PLACEHOLDER_COLOR;
+}
+
+::-moz-placeholder {  /* Firefox 19+ */
+   color: $PLACEHOLDER_COLOR;
+}
+
+:-ms-input-placeholder {
+   color: $PLACEHOLDER_COLOR;
+}
 
 html {
   box-sizing: border-box;
@@ -16,6 +31,7 @@ body {
   margin: 2em;
   border: 0;
   -webkit-font-smoothing: antialiased;
+  text-shadow: $TEXT_SHADOW;
 }
 
 a {
@@ -36,6 +52,7 @@ button {
     border-top-color: $SECONDARY;
     border-bottom: $border;
     outline: none;
+    text-shadow: $TEXT_SHADOW;
 
     &:active {
         $background-color: darken($SECONDARY, 5%);
@@ -49,6 +66,24 @@ input[type=text] {
     border: none;
     border-bottom: 1px solid rgba(0, 0, 0, 0.25);
     background-color: transparent;
+    transition: 0.5s border-color;
+
+    &.error {
+        $placeholder-color: rgba($ERROR, 0.5);
+        border-bottom-color: $ERROR;
+
+        &::-webkit-input-placeholder {
+           color: $placeholder-color;
+        }
+
+        &::-moz-placeholder {  /* Firefox 19+ */
+           color: $placeholder-color;
+        }
+
+        &:-ms-input-placeholder {
+           color: $placeholder-color;
+        }
+    }
 }
 
 header {
@@ -62,7 +97,13 @@ header {
     }
 
     .pricing-details {
-        opacity: 0.75;
+        opacity: 0.8;
+    }
+
+    .upload {
+        input[type=file] {
+            display: none;
+        }
     }
 }
 
@@ -73,13 +114,33 @@ footer {
     margin: 1em 0;
 }
 
+#drop-mask {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba($PRIMARY, 0.5);
+    z-index: 1000;
+    font-size: 2em;
+    font-weight: bold;
+    border: 15px dashed rgba(255,255,255, 0.75);
+    text-shadow: 0 0 25px black;
+}
+
+body.dz-drag-hover #drop-mask {
+    display: flex;
+}
+
 #envelope {
     color: gray;
+    text-shadow: none;
     background-color: #fdfaf0;
     padding: 1em 2em 4em;
     box-shadow: 2px 2px 1px rgba(0,0,0, 0.25);
     border: 1px solid rgba(255,255,255, 0.5);
     position: relative;
+    transform: translate3d(0, 100%, 0); // prevent "flash" before animate.css loads
 
     .stamp {
         float: right;

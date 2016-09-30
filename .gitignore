@@ -1,2 +1,5 @@
-.DS_Store
 node_modules/
+static/uploads/
+.DS_Store
+npm-debug.log
+

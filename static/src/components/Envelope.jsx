@@ -13,9 +13,13 @@ export default class Envelope extends React.Component {
     return (
       <div id="envelope" className="animated slideInUp">
         <img className="stamp" src="/img/stamp.png" />
-        <Address from={true} />
-        <Address from={false} />
+        <Address from={true} updateAddress={this.props.updateAddress} />
+        <Address from={false} updateAddress={this.props.updateAddress} />
       </div>
     )
   }
+}
+
+Envelope.propTypes = {
+  updateAddress: React.PropTypes.func.isRequired
 }
