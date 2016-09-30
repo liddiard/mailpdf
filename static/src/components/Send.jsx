@@ -45,26 +45,26 @@ export default class Send extends React.Component {
             <label>
               <input type="radio" name="mailType" value="noUpgrade"
                      checked={this.props.options.mailType === 'noUpgrade'}
-                     onClick={this.handleMailTypeChange} />
+                     onChange={this.handleMailTypeChange} />
               No extra service
             </label>
             <label>
               <input type="radio" name="mailType" value="registered"
                     checked={this.props.options.mailType === 'registered'}
-                    onClick={this.handleMailTypeChange} />
+                    onChange={this.handleMailTypeChange} />
               Registered mail <span className="price">+{utils.formatMoney(this.props.costs.registeredMail)}</span>
             </label>
             <label>
               <input type="radio" name="mailType" value="certified"
                      checked={this.props.options.mailType === 'certified'}
-                     onClick={this.handleMailTypeChange} />
+                     onChange={this.handleMailTypeChange} />
               Certified mail <span className="price">+{utils.formatMoney(this.props.costs.certifiedMail)}</span>
             </label>
           </div>
           <label>
             <input type="checkbox" name="returnEnvelope"
                    checked={this.props.options.returnEnvelope}
-                   onClick={this.handleReturnEnvelopeChange} />
+                   onChange={this.handleReturnEnvelopeChange} />
             Add a return envelope <span className="price">+{utils.formatMoney(this.props.costs.returnEnvelope)}</span>
           </label>
         </div>
