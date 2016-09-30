@@ -3,8 +3,8 @@ module.exports = {
   costs: {
     base: 1.99,
     maxFreePages: 6,
-    overMaxFreePages: 0.95,
-    overMaxFreePagesPerPage: 0.25,
+    overMaxFreePages: 1.49,
+    overMaxFreePagesPerPage: 0.15,
     maxPages: 60,
     registeredMail: 4.99,
     certifiedMail: 16.50,
