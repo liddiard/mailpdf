@@ -21,12 +21,6 @@ export default class Header extends React.Component {
     if (!file) {
       return;
     }
-    /*
-    for (var key in event.target.files) {
-      console.log('key:', key);
-      console.log('value:', event.target.files[key]);
-    }
-    */
     request
     .post('/api/upload')
     .attach('pdf', file)
@@ -49,7 +43,7 @@ export default class Header extends React.Component {
         </p>
         <h1>Mail a PDF document for {utils.formatMoney(this.props.costs.base)} in under 60 seconds.</h1>
         <p className="pricing-details">
-          Tracking included. Up to {this.props.costs.maxFreePages} black-and-white pages for {utils.formatMoney(this.props.costs.base)}. Additional pages {utils.formatMoney(this.props.costs.overMaxFreePages)} + {utils.formatMoney(this.props.costs.overMaxFreePagesPerPage)}/each. Service for U.S. addresses only.
+          Tracking included. Up to {this.props.costs.maxFreePages} black-and-white pages for {utils.formatMoney(this.props.costs.base)}. Additional pages {utils.formatMoney(this.props.costs.overMaxFreePagesPerPage)}/each + {utils.formatMoney(this.props.costs.overMaxFreePages)}. Service for U.S. addresses only.
         </p>
         <p className="upload">
           <strong>Drag and drop</strong> a PDF onto this window or click <button onClick={this.showFileUploadDialog}>Upload PDF <i className="fa fa-upload" aria-hidden="true"></i></button>
