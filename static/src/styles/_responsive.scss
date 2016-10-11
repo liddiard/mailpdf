@@ -1,0 +1,64 @@
+@media (max-width: 1200px) {
+  #envelope {
+    .address {
+        $width: 50%;
+        width: $width;
+
+        &.to {
+            margin-left: calc(50% - #{$width / 2});
+        }
+    }
+  }
+}
+
+@media (max-width: 800px) {
+  #envelope {
+    .address {
+        $width: 66%;
+        width: $width;
+
+        &.to {
+            margin-left: calc(50% - #{$width / 2});
+        }
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  main {
+    margin: 1em;
+  }
+
+  #envelope {
+    padding: 1em;
+
+    .address {
+        width: 100%;
+        margin: 0;
+
+        &.to {
+            margin-left: 0;
+        }
+
+        + .address {
+            margin-top: 0;
+        }
+    }
+
+    .stamp {
+      display: none;
+    }
+  }
+}
+
+@media (max-width: 360px) {
+  #envelope {
+    padding: 0.5em;
+    
+    .address {
+      input {
+        font-size: 1.25em;
+      }
+    }
+  }
+}
