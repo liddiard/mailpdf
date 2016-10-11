@@ -5,6 +5,10 @@
   "scripts": {
     "start": "node ./bin/www"
   },
+  "engines": {
+    "npm": "3.10.5",
+    "node": "6.6.0"
+  },
   "dependencies": {
     "body-parser": "~1.15.1",
     "connect-busboy": "0.0.2",
