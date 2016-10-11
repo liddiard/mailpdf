@@ -2,7 +2,6 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import update from 'react-addons-update';
 import request from 'superagent';
-import Dropzone from 'dropzone';
 
 import utils from './utils.js';
 import costs from './costs.js';
@@ -23,44 +22,105 @@ class App extends React.Component {
         url: '',
         numPages: 0
       },
+      fileUploadHasBegun: false,
       fileUploaded: false,
-      fromAddress: {},
-      toAddress: {},
+      fromAddress: {
+        // error can be undefined (has not been validated), a string with an
+        // error message (truthy), or false (validated without error)
+        error: undefined,
+        // set of missing fields
+        missing: this.props.requiredFields,
+        // true when address has not been verified but it queued for verification
+        dirty: false
+      },
+      toAddress: {
+        error: undefined,
+        missing: this.props.requiredFields,
+        dirty: false
+      },
       options: {
         mailType: 'noUpgrade',
         returnEnvelope: false
-      }
+      },
+      sentSuccessfully: false
     };
+    this.fileUploadHasBegun = this.fileUploadHasBegun.bind(this);
     this.updateFile = this.updateFile.bind(this);
+    this.missingFields = this.missingFields.bind(this);
     this.updateAddress = this.updateAddress.bind(this);
+    this.verifyAddress = this.verifyAddress.bind(this);
     this.updateOptions = this.updateOptions.bind(this);
+    this.sentSuccessfully = this.sentSuccessfully.bind(this);
   }
 
-  componentDidMount() {
-    new Dropzone(document.body, {
-      previewsContainer: ".dropzone-previews",
-      // You probably don't want the whole body
-      // to be clickable to select files
-      clickable: false,
-      url: '/upload',
-      // https://github.com/enyo/dropzone/issues/438#issuecomment-128824773
-      dragenter: () => {},
-      dragleave: () => {},
-      init: function(){ utils.setupDragon(this) }
-    });
+  fileUploadHasBegun() {
+    this.setState({ fileUploadHasBegun: true });
+    // focus the first address input so the user can start filling it out
+    document.querySelector('.address input').focus();
   }
 
   updateFile(file) {
-    this.setState({ file: file, fileUploaded: true });
+    this.setState({ file: file, fileUploaded: !!file.numPages });
   }
 
-  updateAddress(isFrom, address) {
-    if (isFrom) {
-      this.setState({ fromAddress: address });
+  missingFields(address) {
+    return new Set(Array.from(this.props.requiredFields).filter(field => {
+      return !(address[field] && address[field].length);
+    }));
+  }
+
+  updateAddress(isFrom, field) {
+    const address = isFrom ? this.state.fromAddress : this.state.toAddress;
+    const prop = isFrom ? 'fromAddress' : 'toAddress';
+    const updatedAddress = update(address, {$merge: field});
+    const missingFields = this.missingFields(updatedAddress);
+    updatedAddress.missing = missingFields;
+    const isNotMissingFields = !Array.from(missingFields).length;
+    updatedAddress.dirty = isNotMissingFields;
+    const newState = {};
+    newState[prop] = updatedAddress;
+    this.setState(newState);
+    if (isNotMissingFields) {
+      // queue for address verification
+      const timeoutIdKey = `${prop}TimeoutId`;
+      if (this[timeoutIdKey]) {
+        window.clearTimeout(this[timeoutIdKey]);
+      }
+      const timeoutId = window.setTimeout(() => {
+        this.verifyAddress(isFrom);
+      }, 500);
+      // store timeout id
+      // https://nathanleclaire.com/blog/2013/11/16/the-javascript-question-i-bombed-in-an-interview-with-a-y-combinator-startup/
+      this[timeoutIdKey] = timeoutId;
     }
-    else {
-      this.setState({ toAddress: address });
+  }
+
+  componentDidMount() {
+    if (this.props.demo) {
+      // wait 1s for DOM/animations before showing popup
+      setTimeout(() => { 
+        alert('This application is running in demo mode because "demo" was found in the URL.\n\nEverything will work as normal, except your credit card won\'t actually be charged and the document won\'t actually be sent.\n\nIf you meant to use this service for real, remove the word "demo" from the URL.');
+      }, 1000);
     }
+  }
+
+  verifyAddress(isFrom) {
+    let address = isFrom ? this.state.fromAddress : this.state.toAddress;
+    request
+    .post('/verify_address')
+    .send(address)
+    .end((err, res) => {
+      if (err) console.error(err);
+      // N.B. we redefine `address` inside the callback to get the current value
+      // of `address` because it may have changed since earlier
+      address = isFrom ? this.state.fromAddress : this.state.toAddress;
+      const prop = isFrom ? 'fromAddress' : 'toAddress';
+      const newError = res.body.message || false;
+      const updatedAddress = update(address, {$merge: {error: newError, dirty: false}});
+      const newState = {};
+      newState[prop] = updatedAddress;
+      this.setState(newState);
+    });
   }
 
   updateOptions(option) {
@@ -68,19 +128,37 @@ class App extends React.Component {
     this.setState({ options: update(options, {$merge: option}) });
   }
 
+  sentSuccessfully() {
+    this.setState({ sentSuccessfully: true });
+  }
+
   render() {
     return (
       <main>
         <div id="drop-mask">Release to drop!</div>
-        <Header costs={this.props.costs} updateFile={this.updateFile} />
-        <div className="dropzone-previews"></div>
-        <Envelope updateAddress={this.updateAddress} />
-        <Send costs={this.props.costs} numPages={this.state.file.numPages}
+        <Header costs={this.props.costs} file={this.state.file}
+                fileUploadHasBegun={this.fileUploadHasBegun}
+                updateFile={this.updateFile}
+                actionable={!this.state.sentSuccessfully} />
+        <Envelope fileUploadHasBegun={this.state.fileUploadHasBegun}
+                  updateAddress={this.updateAddress}
+                  fromFields={this.state.fromAddress}
+                  toFields={this.state.toAddress}
+                  sentSuccessfully={this.state.sentSuccessfully} />
+        <Send costs={this.props.costs} file={this.state.file}
               options={this.state.options} updateOptions={this.updateOptions}
-              calculateCost={this.props.calculateCost} />
+              calculateCost={this.props.calculateCost}
+              fromAddress={this.state.fromAddress}
+              toAddress={this.state.toAddress}
+              sentSuccessfully={this.sentSuccessfully}
+              actionable={!this.state.sentSuccessfully} />
         <footer>
-          <p>Powered by <a href="https://lob.com/" target="_blank">Lob</a> and <a href="https://stripe.com/" target="_blank">Stripe</a>.</p>
-          <p>Copyright © 2016 <a href="https://harrisonliddiard.com/" target="_blank">Harrison Liddiard</a>.</p>
+          <ul>
+            <li><a href="#" target="_blank">Refund Policy</a></li>
+            <li><a href="#" target="_blank">Terms of Service</a></li>
+            <li><a href="#" target="_blank">Privacy Policy</a></li>
+          </ul>
+          <p>Powered by <a href="https://lob.com/" target="_blank">Lob</a> and <a href="https://stripe.com/" target="_blank">Stripe</a></p>
         </footer>
       </main>
     );
@@ -93,8 +171,10 @@ App.propTypes = {
 };
 
 App.defaultProps = {
+  requiredFields: new Set(['name', 'line1', 'city', 'state', 'zip']),
   costs: costs.costs,
-  calculateCost: costs.calculateCost
+  calculateCost: costs.calculateCost,
+  demo: document.location.search.search('demo') > -1
 };
 
 ReactDOM.render(
