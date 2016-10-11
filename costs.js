@@ -1,8 +1,8 @@
-module.exports = {
+const cost = {
 
   costs: {
     base: 1.99,
-    maxFreePages: 6,
+    maxFreePages: 5,
     overMaxFreePages: 1.49,
     overMaxFreePagesPerPage: 0.15,
     maxPages: 60,
