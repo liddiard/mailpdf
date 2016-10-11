@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+
+    <title>Track your document</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" />
+
+    <style>
+
+      body {
+        background-color: #30c9e8;
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        margin: 0 auto;
+        border: 0;
+        padding: 0 1em;
+        -webkit-font-smoothing: antialiased;
+        max-width: 640px;
+        color: white;
+        text-shadow: 0 0 5px rgba(0, 0, 0, 0.25);
+        line-height: 1.4;
+      }
+      
+      main {
+        text-shadow: none;
+        color: black;
+        background-color: white;
+        padding: 1em 2em;
+        overflow: hidden;
+        margin-top: 1em;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.25);
+      }
+
+      h1, h2, h3, h4, h5, h6 {
+        margin: 1em 0 0.25em;
+      }
+
+      .most-recent {
+        text-transform: uppercase;
+        font-size: 0.8em;
+        font-weight: bold;
+        opacity: 0.5;
+      }
+
+      .tracking-events ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0.5em 0;
+      }
+
+      .tracking-events li {
+        margin: 0.5em 0;
+      }
+
+      .tracking-events h3 {
+        margin-top: 0;
+      }
+
+      .tracking-events .location, .tracking-events time {
+        display: block;
+      }
+
+      .tracking-events .fa-arrow-up {
+        font-size: 1.5em;
+        opacity: 0.25;
+        display: inline-block;
+        margin-bottom: 0.25em;
+      }
+
+      .tracking-events li:first-child .fa-arrow-up {
+        display: none;
+      }
+
+      .details .address {
+        float: left;
+        margin: 1em;
+      }
+
+      .details .address h3 {
+        margin-top: 0;
+      }
+
+    </style>
+
+  </head>
+  <body>
+
+    <h1>Tracking information for: <span class="letter-id">{{id}}</span></h1>
+
+    <main>
+
+      {{#notFound}}
+        <h1>Not Found</h1>
+        <p>Document with tracking ID “{{id}}” not found. Please check that your link contains a complete tracking number. It should begin with “ltr_” followed by a combination of random numbers and letters.</p>
+      {{/notFound}}
+
+      {{^notFound}}
+        <p>Expected delivery: <strong><date>{{expected_delivery_date}}</date></strong> Carrier: {{carrier}}</p>
+        <p>Sent: <date>{{date_created}}</date></p>
+
+        <section class="tracking-events">
+
+          <h2>Tracking events</h2>
+
+          {{#tracking_events.length}}
+            <span class="most-recent">
+              Most recent
+            </span>
+            <ul>
+              {{#tracking_events}}
+                <li>
+                  <i class="fa fa-arrow-up" aria-hidden="true"></i>
+                  <h3>{{name}}</h3>
+                  <span class="location">
+                    <i class="fa fa-map-marker fa-fw" aria-hidden="true"></i> {{location}}
+                  </span>
+                  <time>
+                    <i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> {{time}}
+                  </time>
+                </li>
+              {{/tracking_events}}
+            </ul>
+          {{/tracking_events.length}}
+          {{^tracking_events.length}}
+            No tracking events yet. Please check back in a little while.
+          {{/tracking_events.length}}
+        </section>
+
+        <section class="details">
+          <h2>Document information</h2>
+          <div class="address from">
+            <h3>From</h3>
+            {{from.name}}<br/>
+            {{from.address_line1}}<br/>
+            {{#from.address_line2}}
+              {{from.address_line2}}<br/>
+            {{/from.address_line2}}
+            {{from.address_city}}, {{from.address_state}} {{from.address_zip}}
+          </div>
+          <div class="address to">
+            <h3>To</h3>
+            {{to.name}}<br/>
+            {{to.address_line1}}<br/>
+            {{#to.address_line2}}
+              {{to.address_line2}}<br/>
+            {{/to.address_line2}}
+            {{to.address_city}}, {{to.address_state}} {{to.address_zip}}
+          </div>
+        </section>
+      {{/notFound}}
+
+    </main>
+
+  </body>
+</html>
