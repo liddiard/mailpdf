@@ -14,7 +14,9 @@
     "react": "^15.3.2",
     "react-addons-update": "^15.3.2",
     "react-dom": "^15.3.2",
-    "react-fileupload-progress": "^0.4.0",
+    "react-modal-dialog": "^3.0.2",
+    "react-progressbar": "^1.3.4",
+    "scroll-into-view": "^1.7.1",
     "superagent": "^2.3.0"
   },
   "devDependencies": {
