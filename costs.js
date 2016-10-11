@@ -12,21 +12,23 @@ const cost = {
   },
 
   calculateCost: function(options) {
-    let total = this.costs.base;
-    if (options.numPages > this.costs.maxFreePages) {
-      total += this.costs.overMaxFreePages;
-      total += (options.numPages - this.costs.maxFreePages) * this.costs.overMaxFreePagesPerPage;
+    let total = cost.costs.base;
+    if (options.numPages > cost.costs.maxFreePages) {
+      total += cost.costs.overMaxFreePages;
+      total += (options.numPages - cost.costs.maxFreePages) * cost.costs.overMaxFreePagesPerPage;
     }
     if (options.mailType === 'registered') {
-      total += this.costs.registeredMail;
+      total += cost.costs.registeredMail;
     }
     else if (options.mailType === 'certified') {
-      total += this.costs.certifiedMail;
+      total += cost.costs.certifiedMail;
     }
     if (options.returnEnvelope) {
-      total += this.costs.returnEnvelope;
+      total += cost.costs.returnEnvelope;
     }
     return total;
   }
 
 };
+
+module.exports = cost;
