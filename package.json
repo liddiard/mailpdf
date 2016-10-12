@@ -3,10 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www",
-    "dokku": {
-      "postdeploy": "./static/compile_production.sh"
-    }
+    "start": "node ./bin/www"
   },
   "engines": {
     "npm": "3.10.5",
