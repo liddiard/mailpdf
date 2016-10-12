@@ -4,7 +4,7 @@ import update from 'react-addons-update';
 import request from 'superagent';
 
 import utils from './utils.js';
-import costs from './costs.js';
+import costs from '../../costs.js';
 import Header from './components/Header.jsx';
 import Envelope from './components/Envelope.jsx';
 import Send from './components/Send.jsx';
