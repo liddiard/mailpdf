@@ -174,7 +174,7 @@ App.defaultProps = {
   requiredFields: new Set(['name', 'line1', 'city', 'state', 'zip']),
   costs: costs.costs,
   calculateCost: costs.calculateCost,
-  demo: document.location.search.search('demo') > -1
+  demo: true || document.location.search.search('demo') > -1
 };
 
 ReactDOM.render(
