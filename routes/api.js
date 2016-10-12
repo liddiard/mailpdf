@@ -11,7 +11,7 @@ const multer = require('multer');
 const moment = require('moment');
 const zipcodes = require('zipcodes');
 
-const calculateCost = require('../costs.js').calculateCost;
+const calculateCost = require('../static/costs.js').calculateCost;
 
 const UPLOAD_DEST = 'static/uploads/';
 const PAGE_LIMIT = 60;
