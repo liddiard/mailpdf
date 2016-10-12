@@ -1,7 +1,0 @@
-{
-  "scripts": {
-    "dokku": {
-      "postdeploy": "./static/compile_production.sh"
-    }
-  }
-}
