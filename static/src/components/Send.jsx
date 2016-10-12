@@ -27,7 +27,7 @@ export default class Send extends React.Component {
   componentDidMount() {
     this.handler = StripeCheckout.configure({
       key: 'pk_test_o41iwtQNmvQuGl4Vses2r1fa',
-      image: 'https://stripe.com/img/documentation/checkout/marketplace.png',
+      image: '/img/logo_bg.png',
       locale: 'en',
       token: token => {
         // update state.email in case it has changed
