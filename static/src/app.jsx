@@ -99,7 +99,7 @@ class App extends React.Component {
     if (this.props.demo) {
       // wait 1s for DOM/animations before showing popup
       setTimeout(() => { 
-        alert('This application is running in demo mode because "demo" was found in the URL.\n\nEverything will work as normal, except your credit card won\'t actually be charged and the document won\'t actually be sent.\n\nIf you meant to use this service for real, remove the word "demo" from the URL.');
+        alert('This application is running in demo mode.\n\nEverything will work as normal, except your credit card won\'t actually be charged and the document won\'t actually be sent.');
       }, 1000);
     }
   }
