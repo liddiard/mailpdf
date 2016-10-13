@@ -91,6 +91,7 @@ fieldset {
 
 input[type=text], input[type=email] {
     border: none;
+    border-radius: 0;
     border-bottom: 1px solid rgba(0, 0, 0, 0.25);
     background-color: transparent;
     transition: 1s border-color;
