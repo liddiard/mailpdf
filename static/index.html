@@ -19,6 +19,7 @@
     <script>
       var script = document.createElement('script');
       script.src = document.location.hostname.search('.online') === -1 ? '/dist/bundle.js' :  'https://s3.amazonaws.com/mailpdfonline/dist/bundle.js';
+      document.body.appendChild(script);
     </script>
 
   </body>
