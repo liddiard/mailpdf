@@ -5,6 +5,7 @@
   "main": "src/app.jsx",
   "scripts": {
     "start": "watchify -v -d -o dist/bundle.js -t [ babelify --presets [ es2015 react ] ] -t scssify -t [ envify --NODE_ENV development ] src/app.jsx",
+    "deploy": "./deploy.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Harrison Liddiard <omniaura5@gmail.com> (http://harrisonliddiard.com)",
