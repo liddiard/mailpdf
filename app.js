@@ -23,6 +23,7 @@ app.disable('x-powered-by'); // we don't need the x-powered-by express header
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));
 // allow larger file uploads: http://stackoverflow.com/a/19965089/2487925
+// should match value in nginx.conf.sigil
 const sizeLimit = '25mb';
 app.use(bodyParser.json({ limit: sizeLimit }));
 app.use(bodyParser.urlencoded({ limit: sizeLimit, extended: true }));
@@ -59,7 +60,7 @@ app.use(function(err, req, res, next) {
 // rate limiting ===============================================================
 if (process.env.NODE_ENV === 'production') {
   const apiLimiter = new RateLimit({
-    windowMs: 60*1000, // 1 minute window
+    windowMs: 10*60*1000, // 10 minute window
     delayAfter: 20, // begin slowing down responses after the first 20 requests
     delayMs: 0.1*1000, // slow down subsequent responses by 0.1 seconds per request
     max: 40, // start blocking after 40 requests
