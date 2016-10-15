@@ -386,6 +386,15 @@ body.dz-drag-hover #drop-mask {
             display: inline-block;
             padding: 0.25em 0.5em;
 
+            a {
+                background-color: rgba(255, 255, 255, 0.3);
+                margin-left: 0.3em;
+
+                &:hover {
+                    background-color: rgba(255, 255, 255, 0.5);
+                }
+            }
+
             .price {
                 opacity: 0.8;
             }
