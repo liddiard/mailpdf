@@ -23,7 +23,8 @@ app.disable('x-powered-by'); // we don't need the x-powered-by express header
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));
 // allow larger file uploads: http://stackoverflow.com/a/19965089/2487925
-// should match value in nginx.conf.sigil
+// should match value in nginx.conf on server. for dokku, see example in docs:
+// http://dokku.viewdocs.io/dokku/configuration/nginx/#customizing-via-configuration-files-included-by-the-default-tem
 const sizeLimit = '25mb';
 app.use(bodyParser.json({ limit: sizeLimit }));
 app.use(bodyParser.urlencoded({ limit: sizeLimit, extended: true }));
