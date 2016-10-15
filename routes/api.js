@@ -45,8 +45,8 @@ router.post('/upload', upload.single('pdf'), (req, res, next) => {
     // uploaded PDF is a random filename assigned by multer; resized PDF has
     // the same filename prefix but with '.pdf' appended
     exec(`gs -q -sDEVICE=pdfwrite -sPAPERSIZE=letter -dFIXEDMEDIA -dPDFFitPage -dCompatibilityLevel=1.4 -o ${req.file.path}.pdf ${req.file.path}`, (err, stdout, stderr) => {
-      if (stderr) {
-        console.error(stderr);
+      if (err) {
+        console.error(err, stderr);
         return res.status(400).send({ error: 'Unable to process PDF. Please check that you have uploaded a valid PDF document.' });
       }
       res.json({
@@ -311,8 +311,8 @@ router.get('/track/:trackingNumber', (req, expressRes, next) => {
 
 function countPages(pdf, res, callback) {
   exec(`gs -q -dNODISPLAY -c "(${pdf}) (r) file runpdfbegin pdfpagecount = quit"`, (err, stdout, stderr) => {
-    if (stderr) {
-      console.error(stderr);
+    if (err) {
+      console.error(err, stderr);
       return res.status(400).send({ error: 'Unable to process PDF. Please check that you have uploaded a valid PDF document.' });
     }
     // split by newlines, filter out empty lines
