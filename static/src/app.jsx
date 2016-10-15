@@ -154,9 +154,9 @@ class App extends React.Component {
               actionable={!this.state.sentSuccessfully} />
         <footer>
           <ul>
-            <li><a href="#" target="_blank">Refund Policy</a></li>
-            <li><a href="#" target="_blank">Terms of Service</a></li>
-            <li><a href="#" target="_blank">Privacy Policy</a></li>
+            <li><a href="/pages/refund-policy" target="_blank">Refund Policy</a></li>
+            <li><a href="/pages/terms" target="_blank">Terms of Service</a></li>
+            <li><a href="/pages/privacy" target="_blank">Privacy Policy</a></li>
           </ul>
           <p>Powered by <a href="https://lob.com/" target="_blank">Lob</a> and <a href="https://stripe.com/" target="_blank">Stripe</a></p>
         </footer>
