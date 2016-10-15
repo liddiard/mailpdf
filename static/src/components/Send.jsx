@@ -188,26 +188,32 @@ export default class Send extends React.Component {
               <input type="radio" name="mailType" value="noUpgrade"
                      checked={this.props.options.mailType === 'noUpgrade'}
                      onChange={this.handleMailTypeChange} tabIndex="4" />
-              No extra service
-            </label>
-            <label>
-              <input type="radio" name="mailType" value="registered"
-                    checked={this.props.options.mailType === 'registered'}
-                    onChange={this.handleMailTypeChange} tabIndex="4" />
-              Registered mail <span className="price">+{utils.formatMoney(this.props.costs.registeredMail)}</span>
+              Standard service
             </label>
             <label>
               <input type="radio" name="mailType" value="certified"
                      checked={this.props.options.mailType === 'certified'}
                      onChange={this.handleMailTypeChange} tabIndex="4" />
-              Certified mail <span className="price">+{utils.formatMoney(this.props.costs.certifiedMail)}</span>
+              Certified Mail <span className="price">+{utils.formatMoney(this.props.costs.certifiedMail)}</span>
+              <a href="https://www.usps.com/ship/insurance-extra-services.htm" target="_blank" title="What's this?">
+                <i className="fa fa-question fa-fw" aria-hidden="true"></i>
+              </a>
+            </label>
+            <label>
+              <input type="radio" name="mailType" value="registered"
+                    checked={this.props.options.mailType === 'registered'}
+                    onChange={this.handleMailTypeChange} tabIndex="4" />
+              Registered Mail <span className="price">+{utils.formatMoney(this.props.costs.registeredMail)}</span>
+              <a href="https://www.usps.com/ship/insurance-extra-services.htm" target="_blank" title="What's this?">
+                <i className="fa fa-question fa-fw" aria-hidden="true"></i>
+              </a>
             </label>
           </fieldset>
           <label>
             <input type="checkbox" name="returnEnvelope"
                    checked={this.props.options.returnEnvelope}
                    onChange={this.handleReturnEnvelopeChange} tabIndex="5" />
-            Include return envelope <span className="price">+{utils.formatMoney(this.props.costs.returnEnvelope)}</span>
+            Include a return envelope <span className="price">+{utils.formatMoney(this.props.costs.returnEnvelope)}</span>
           </label>
         </div>
         {error}
