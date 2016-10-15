@@ -69,9 +69,18 @@ export default class Header extends React.Component {
       this.setState({ uploadProgress: event.percent, status: status });
     })
     .end((err, res) => {
-      if (err) console.error(err);
-      if (res.body.error) {
-        this.setState({ status: 'complete_error', error: res.body.error }, () => {
+      if (err || res.body.error) {
+        let errorMsg;
+        if (err && err.status === 413) {
+          errorMsg = 'PDF over 25 MB file size limit. Please try again with a smaller file.';
+        }
+        else if (err) {
+          errorMsg = err;
+        }
+        else {
+          errorMsg = res.body.error;
+        }
+        this.setState({ status: 'complete_error', error: errorMsg }, () => {
           // show an alert if the status element is not in the browser viewport
           if (this.refs.status.getBoundingClientRect().top < 0) {
             alert(`Upload error: ${this.state.error}`);
