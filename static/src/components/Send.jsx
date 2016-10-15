@@ -51,12 +51,12 @@ export default class Send extends React.Component {
         .send(payload)
         .end((err, res) => {
           this.setState({ isShowingProgressModal: false });
-          if (err) {
+          if (res.body && res.body.error) {
+            alert(`We apologize, there was an unexpected problem with your order: ${res.body.error}`);
+          }
+          else if (err) {
             console.error(err);
             alert(err);
-          }
-          else if (res.body && res.body.error) {
-            alert(`Error: ${res.body.error}`);
           }
           else {
             this.props.sentSuccessfully(); // we're done!
