@@ -29,9 +29,9 @@ export default class Envelope extends React.Component {
         </div>
         <div id="send-success" className={sendSuccessClass}>
           <div>
-            <h2>All set!</h2>
+            <h2>You’re all set!</h2>
             <p>Your document has begun its journey to {this.props.toFields.line1}.</p>
-            <p>You will receive an email shortly with tracking information.</p>
+            <p>You will receive an email with tracking information shortly.</p>
             <button className="send-another" onClick={this.reloadPage}>
               Send Another <i className="fa fa-refresh" aria-hidden="true"></i>
             </button>
