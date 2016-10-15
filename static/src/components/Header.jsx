@@ -74,11 +74,11 @@ export default class Header extends React.Component {
         if (err && err.status === 413) {
           errorMsg = 'PDF over 25 MB file size limit. Please try again with a smaller file.';
         }
-        else if (err) {
-          errorMsg = err;
+        else if (res.body && res.body.error) {
+          errorMsg = res.body.error;
         }
         else {
-          errorMsg = res.body.error;
+          errorMsg = err.message;
         }
         this.setState({ status: 'complete_error', error: errorMsg }, () => {
           // show an alert if the status element is not in the browser viewport
