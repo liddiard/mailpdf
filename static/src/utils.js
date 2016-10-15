@@ -27,7 +27,7 @@ module.exports = {
   },
 
   formatMoney(number) {
-    return '$' + number.toFixed(2);
+    return '$' + (number/100).toFixed(2);
   }
 
 };

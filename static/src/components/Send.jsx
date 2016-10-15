@@ -93,7 +93,7 @@ export default class Send extends React.Component {
       name: 'Mail a PDF Online',
       description: `to ${this.props.toAddress.line1}`,
       zipCode: true,
-      amount: this.getTotal() * 100, // amount in cents
+      amount: this.getTotal(), // amount in cents
       email: this.state.email,
       panelLabel: 'Pay {{amount}} and Send',
     });

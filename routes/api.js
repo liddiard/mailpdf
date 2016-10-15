@@ -143,7 +143,7 @@ router.post('/checkout', (req, expressRes, next) => {
       // successfully returned
       capture: false,
 
-      amount: calculatedCost*100, // IMPORTANT: amount in number of cents
+      amount: calculatedCost, // IMPORTANT: amount in number of cents
 
       // frontend locale on Stripe Checkout explicity set to 'en', so all
       // charges should be displayed as USD

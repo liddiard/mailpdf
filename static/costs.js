@@ -1,14 +1,15 @@
 const cost = {
 
+  // all costs in cents
   costs: {
-    base: 1.99,
+    base: 199,
     maxFreePages: 5,
-    overMaxFreePages: 1.49,
-    overMaxFreePagesPerPage: 0.15,
+    overMaxFreePages: 149,
+    overMaxFreePagesPerPage: 15,
     maxPages: 60,
-    registeredMail: 4.99,
-    certifiedMail: 16.50,
-    returnEnvelope: 0.49
+    certifiedMail: 499,
+    registeredMail: 1650,
+    returnEnvelope: 49
   },
 
   calculateCost: function(options) {
