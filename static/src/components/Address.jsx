@@ -74,7 +74,7 @@ export default class Address extends React.Component {
           <input type="text" name="state" placeholder="State" required
                  className={stateClassName} value={this.props.fields.state || ''}
                  onChange={this.handleInputChange} tabIndex={tabIndex} />
-          <input type="text" name="zip" placeholder="Zip" required
+          <input type="text" name="zip" placeholder="Zip" pattern="\d*" required
                  className={zipClassName} value={this.props.fields.zip || ''}
                  onChange={this.handleInputChange} tabIndex={tabIndex} />
         </div>
