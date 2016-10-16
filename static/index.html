@@ -22,5 +22,26 @@
       document.body.appendChild(script);
     </script>
 
+    <script>
+      if (document.location.hostname.search('.online') !== -1 && 
+          document.location.search.search('demo') !== -1) {
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-46548102-6', 'auto');
+        ga('send', 'pageview');
+      }
+      else {
+        // we are not on the production website or are in demo mode; define a 
+        // noop `ga` function that just logs to the console
+        console.log('[ga] Non-production environment detected; using dummy ga function.');
+        window.ga = function(method, type, category, action, label, value) {
+          console.log(`[ga] ${method} ${type} | category: ${category}, action: ${action}, label: ${label}, value: ${value}`);
+        }
+      }
+    </script>
+
   </body>
 </html>

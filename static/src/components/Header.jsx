@@ -37,6 +37,7 @@ export default class Header extends React.Component {
         utils.setupDragon(this);
         this.on('addedfile', file => {
           _this.uploadFile(null, file);
+          ga('send', 'event', 'file', 'upload', 'drag_drop');
         });
       }
     });
@@ -44,6 +45,7 @@ export default class Header extends React.Component {
 
   showFileUploadDialog(event) {
     this.refs.upload.click();
+    ga('send', 'event', 'file', 'upload', 'button');
   }
 
   uploadFile(event, _file) {
@@ -81,9 +83,11 @@ export default class Header extends React.Component {
           errorMsg = err.message;
         }
         this.setState({ status: 'complete_error', error: errorMsg }, () => {
+          ga('send', 'event', 'file', 'upload_error', errorMsg, { nonInteraction: true });
           // show an alert if the status element is not in the browser viewport
           if (this.refs.status.getBoundingClientRect().top < 0) {
             alert(`Upload error: ${this.state.error}`);
+            ga('send', 'event', 'file', 'upload_error', 'showed_alert', { nonInteraction: true });
           }
         });
       }

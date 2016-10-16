@@ -4,7 +4,6 @@ POST /checkout
 GET /track/{packageID}
 
 Todo
-Google analytics
 Email sending
 Testing
 http://dokku.viewdocs.io/dokku/deployment/one-off-processes/

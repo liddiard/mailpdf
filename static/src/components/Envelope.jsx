@@ -10,6 +10,7 @@ export default class Envelope extends React.Component {
   }
 
   reloadPage() {
+    ga('send', 'event', 'envelope', 'send_another', 'click');
     location.reload();
   }
 

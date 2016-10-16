@@ -53,13 +53,16 @@ export default class Send extends React.Component {
           this.setState({ isShowingProgressModal: false });
           if (res.body && res.body.error) {
             alert(`We apologize, there was an unexpected problem with your order: ${res.body.error}`);
+            ga('send', 'event', 'checkout', 'error', res.body.error, { nonInteraction: true });
           }
           else if (err) {
             console.error(err);
             alert(err);
+            ga('send', 'event', 'checkout', 'error', err, { nonInteraction: true });
           }
           else {
             this.props.sentSuccessfully(); // we're done!
+            ga('send', 'event', 'checkout', 'success', this.props.file.uid, { nonInteraction: true });
           }
         });
       }
@@ -70,10 +73,12 @@ export default class Send extends React.Component {
     const newOption = {};
     newOption[event.target.name] = event.target.value;
     this.props.updateOptions(newOption);
+    ga('send', 'event', 'options', 'change_mail_type', event.target.value);
   }
 
   handleReturnEnvelopeChange(event) {
     this.props.updateOptions({ returnEnvelope: !this.props.options.returnEnvelope });
+    ga('send', 'event', 'options', 'change_return_envelope', Number(!this.props.options.returnEnvelope));
   }
 
   handleEmailChange(event) {
@@ -97,10 +102,12 @@ export default class Send extends React.Component {
       email: this.state.email,
       panelLabel: 'Pay {{amount}} and Send',
     });
+    ga('send', 'event', 'checkout', 'display_checkout');
   }
 
   handleClick(event) {
     this.setState({ isShowingEmailModal: true });
+    ga('send', 'event', 'checkout', 'display_email_modal');
   }
 
   handleEmailModalClose() {

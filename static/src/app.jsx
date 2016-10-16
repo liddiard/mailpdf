@@ -60,7 +60,11 @@ class App extends React.Component {
   }
 
   updateFile(file) {
-    this.setState({ file: file, fileUploaded: !!file.numPages });
+    this.setState({ file: file, fileUploaded: !!file.numPages }, () => {
+      if (this.state.fileUploaded) {
+        ga('send', 'event', 'file', 'uploaded', file.uid, file.numPages, { nonInteraction: true });
+      }
+    });
   }
 
   missingFields(address) {
@@ -120,6 +124,7 @@ class App extends React.Component {
       const newState = {};
       newState[prop] = updatedAddress;
       this.setState(newState);
+      ga('send', 'event', 'address', 'verify', isFrom ? 'from' : 'to', Number(!!newError));
     });
   }
 
@@ -130,6 +135,7 @@ class App extends React.Component {
 
   sentSuccessfully() {
     this.setState({ sentSuccessfully: true });
+    ga('send', 'event', 'send', 'success', this.state.file.uid);
   }
 
   render() {
