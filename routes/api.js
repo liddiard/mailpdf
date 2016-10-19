@@ -232,7 +232,7 @@ router.post('/checkout', (req, expressRes, next) => {
         if (extraService) {
           letterOptions.extra_service = extraService;
         }
-        Lob.letters.create(letterOptions, (err, res) => {
+        Lob.letters.create(letterOptions, (err, lobRes) => {
           if (err) {
             console.error('error creating lob letter', err);
             if (err.status_code === 422) { // bad request
@@ -258,10 +258,16 @@ router.post('/checkout', (req, expressRes, next) => {
               }
               else {
                 // it is finished!
-                console.log(res);
+                console.log(charge);
                 // send a success response with no content
                 expressRes.status(204).send();
-                // TODO: email user with tracking link or number
+                // email user with tracking link or number
+                if (extraService) {
+                  emailTracking(token.email, toAddress.line1, lobRes.tracking_number, true);
+                }
+                else {
+                  emailTracking(token.email, toAddress.line1, lobRes.id, false);
+                }
               }
             });
           }
@@ -341,22 +347,84 @@ function uidToUrl(uid) {
 }
 
 function emailAdmin(subject, body) {
-  return; // noop for now
-  const from_email = new helper.Email('admin_alerts@mailapdf.online');
-  const to_email = new helper.Email(process.env.ADMIN_EMAIL);
-  const content = new helper.Content('text/plain', body);
-  const mail = new helper.Mail(from_email, subject, to_email, content);
+  const payload = {
+    from: {
+      email: 'admin_alerts@mailpdf.online'
+    },
+    personalizations: [
+      {
+        to: [
+          {
+            email: process.env.ADMIN_EMAIL
+          }
+        ],
+        subject: subject
+      }
+    ],
+    content: [
+      {
+        type: 'text/plain',
+        value: body
+      }
+    ],
+  };
 
-  const request = sg.emptyRequest({
-    method: 'POST',
-    path: '/v3/mail/send',
-    body: mail.toJSON(),
+  request
+  .post({
+    url: 'https://api.sendgrid.com/v3/mail/send',
+    auth: {
+      bearer: process.env.SENDGRID_API_KEY
+    },
+    body: payload
+  },
+  (err, res, body) => {
+    console.error(err);
+    console.log(body);
   });
+}
 
-  sg.API(request, (error, response) => {
-    console.log(response.statusCode);
-    console.log(response.body);
-    console.log(response.headers);
+function emailTracking(email, toLine1, trackingNumber, interal) {
+  let templateId, trackUrl;
+  if (internal) {
+    templateId = '37513b23-4187-46ef-9b9a-cf55c03c1a98';
+    trackUrl = `https://tools.usps.com/go/TrackConfirmAction?qtc_tLabels1=${trackingNumber}`;
+  }
+  else {
+    templateId = '462621e1-354c-4c73-9739-2b958ddcf8d1';
+    trackUrl = `https://mailpdf.online/track/${trackingNumber}`;
+  }
+  const payload = {
+    template_id: templateId,
+    from: {
+      email: 'order@mailpdf.online'
+    },
+    personalizations: [
+      {
+        to: [
+          {
+            email: email
+          }
+        ],
+        substitutions: {
+          'to_line1': toLine1,
+          'tracking_number': trackingNumber,
+          'track_url': trackUrl
+        } 
+      }
+    ]
+  };
+
+  request
+  .post({
+    url: 'https://api.sendgrid.com/v3/mail/send',
+    auth: {
+      bearer: process.env.SENDGRID_API_KEY
+    },
+    body: payload
+  },
+  (err, res, body) => {
+    console.error(err);
+    console.log(body);
   });
 }
 
