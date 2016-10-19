@@ -148,7 +148,7 @@ export default class Header extends React.Component {
         </p>
         <h1>Mail a PDF for {utils.formatMoney(this.props.costs.base)} in under 60 seconds.</h1>
         <p className="pricing-details">
-          Tracking included. Up to {this.props.costs.maxFreePages} black-and-white pages for {utils.formatMoney(this.props.costs.base)}. Additional pages {utils.formatMoney(this.props.costs.overMaxFreePagesPerPage)}/each + {utils.formatMoney(this.props.costs.overMaxFreePages)}. Service for U.S. addresses only.
+          Tracking included. Up to {this.props.costs.maxFreePages} black-and-white pages for {utils.formatMoney(this.props.costs.base)}. Additional pages {utils.formatMoney(this.props.costs.overMaxFreePagesPerPage)}/each + {utils.formatMoney(this.props.costs.overMaxFreePages)}. U.S. address service only.
         </p>
         <div id="upload" className={`upload ${invisibleClass}`}>
           <p className="instructions">
