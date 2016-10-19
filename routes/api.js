@@ -375,7 +375,10 @@ function emailAdmin(subject, body) {
     auth: {
       bearer: process.env.SENDGRID_API_KEY
     },
-    body: payload
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
   },
   (err, res, body) => {
     console.error(err);
@@ -383,9 +386,9 @@ function emailAdmin(subject, body) {
   });
 }
 
-function emailTracking(email, toLine1, trackingNumber, interal) {
+function emailTracking(email, toLine1, trackingNumber, uspsTracking) {
   let templateId, trackUrl;
-  if (internal) {
+  if (uspsTracking) {
     templateId = '37513b23-4187-46ef-9b9a-cf55c03c1a98';
     trackUrl = `https://tools.usps.com/go/TrackConfirmAction?qtc_tLabels1=${trackingNumber}`;
   }
@@ -406,9 +409,9 @@ function emailTracking(email, toLine1, trackingNumber, interal) {
           }
         ],
         substitutions: {
-          'to_line1': toLine1,
-          'tracking_number': trackingNumber,
-          'track_url': trackUrl
+          '-to_line1-': toLine1,
+          '-tracking_number-': trackingNumber,
+          '-track_url-': trackUrl
         } 
       }
     ]
@@ -420,7 +423,10 @@ function emailTracking(email, toLine1, trackingNumber, interal) {
     auth: {
       bearer: process.env.SENDGRID_API_KEY
     },
-    body: payload
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
   },
   (err, res, body) => {
     console.error(err);
