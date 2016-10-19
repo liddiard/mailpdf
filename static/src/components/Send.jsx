@@ -26,7 +26,7 @@ export default class Send extends React.Component {
 
   componentDidMount() {
     this.handler = StripeCheckout.configure({
-      key: 'pk_test_o41iwtQNmvQuGl4Vses2r1fa',
+      key: this.props.demo ? this.props.stripeTestKey : this.props.stripeLiveKey,
       image: '/img/logo_bg.png',
       locale: 'en',
       token: token => {
@@ -44,7 +44,8 @@ export default class Send extends React.Component {
           returnEnvelope:  this.props.options.returnEnvelope,
           cost: this.getTotal(),
           fromAddress: this.props.fromAddress,
-          toAddress: this.props.toAddress
+          toAddress: this.props.toAddress,
+          demo: this.props.demo
         };
         request
         .post('/checkout')
@@ -240,6 +241,8 @@ export default class Send extends React.Component {
 }
 
 Send.defaultProps = {
+  stripeTestKey: 'pk_test_o41iwtQNmvQuGl4Vses2r1fa',
+  stripeLiveKey: 'pk_live_e1vrgw70Y8BC4ZCd5Lte0SFm',
   modalBackgroundColor: 'rgba(0,0,0, 0.7)'
 };
 
@@ -252,5 +255,6 @@ Send.propTypes = {
   fromAddress: React.PropTypes.object.isRequired,
   toAddress: React.PropTypes.object.isRequired,
   sentSuccessfully: React.PropTypes.func.isRequired,
-  actionable: React.PropTypes.bool.isRequired
+  actionable: React.PropTypes.bool.isRequired,
+  demo: React.PropTypes.bool.isRequired
 }

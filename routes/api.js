@@ -3,10 +3,11 @@ const exec = require('child_process').exec;
 
 const express = require('express');
 const router = express.Router();
-const Lob = require('lob')('test_be6a3189da61de481a737adcc97acb8bd5e');
-const stripe = require('stripe')('sk_test_79qupSW4SB6SXdiKu0dNwFuj');
-const sg = require('sendgrid')(process.env.SENDGRID_API_KEY);
-const helper = require('sendgrid').mail;
+const request = require('request');
+const LobTest = require('lob')(process.env.LOB_API_KEY_TEST);
+const LobLive = require('lob')(process.env.LOB_API_KEY);
+const stripeTest = require('stripe')(process.env.STRIPE_API_KEY_TEST);
+const stripeLive = require('stripe')(process.env.STRIPE_API_KEY);
 const multer = require('multer');
 const moment = require('moment');
 const zipcodes = require('zipcodes');
@@ -62,7 +63,7 @@ router.post('/upload', upload.single('pdf'), (req, res, next) => {
 
 router.post('/verify_address', (req, expressRes, next) => {
   // call lob address verification api
-  Lob.verification.verify({
+  LobLive.verification.verify({
     address_line1: req.body.line1,
     address_line2: req.body.line2,
     address_city: req.body.city,
@@ -80,6 +81,7 @@ router.post('/verify_address', (req, expressRes, next) => {
 });
 
 router.post('/checkout', (req, expressRes, next) => {
+  const demo = req.body.demo;
   const token = req.body.token;
   const uid = req.body.uid;
   const numPages = req.body.numPages;
@@ -90,13 +92,19 @@ router.post('/checkout', (req, expressRes, next) => {
   const toAddress = req.body.toAddress;
 
   if (!(token && uid && numPages && mailType && cost && fromAddress && toAddress) ||
-      typeof returnEnvelope !== 'boolean') {
+      typeof returnEnvelope !== 'boolean' || typeof demo !== 'boolean') {
     return res.status(400).send({ error: 'Missing at least one of the following required parameters in the request body: "token", "uid", "numPages", "mailType", "returnEnvelope", "cost", "fromAddress", "toAddress".' });
   }
+
+  // IMPORTANT: use the correct live or demo API keys depending on `demo`
+  // request parameter
+  const stripe = demo ? stripeTest : stripeLive;
+  const Lob = demo ? LobTest : LobLive;
 
   if (!(mailType === 'noUpgrade' || mailType === 'registered' || mailType === 'certified')) {
     return res.status(400).send({ error: `Invalid mail type "${mailType}" specified. Valid options are "noUpgrade", "registered", and "certified".` })
   }
+
   let extraService;
   if (mailType === 'registered') {
     extraService = 'registered';

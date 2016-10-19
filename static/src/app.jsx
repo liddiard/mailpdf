@@ -157,7 +157,8 @@ class App extends React.Component {
               fromAddress={this.state.fromAddress}
               toAddress={this.state.toAddress}
               sentSuccessfully={this.sentSuccessfully}
-              actionable={!this.state.sentSuccessfully} />
+              actionable={!this.state.sentSuccessfully}
+              demo={this.props.demo} />
         <footer>
           <ul>
             <li><a href="/pages/refund-policy" target="_blank">Refund Policy</a></li>
