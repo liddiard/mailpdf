@@ -196,7 +196,7 @@ export default class Send extends React.Component {
               <input type="radio" name="mailType" value="noUpgrade"
                      checked={this.props.options.mailType === 'noUpgrade'}
                      onChange={this.handleMailTypeChange} tabIndex="4" />
-              Standard service
+              Regular service
             </label>
             <label>
               <input type="radio" name="mailType" value="certified"
