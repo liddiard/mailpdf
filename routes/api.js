@@ -40,13 +40,20 @@ router.post('/upload', upload.single('pdf'), (req, res, next) => {
       return res.status(400).send({ error: `PDF over ${PAGE_LIMIT}-page limit. Please try again with a shorter document.` });
     }
 
-    // resize pages to 8.5" x 11" dimensions
-    // http://stackoverflow.com/a/7507511/2487925
-    // http://www.ghostscript.com/doc/9.04/Use.htm#Known_paper_sizes
-    // http://ghostscript.com/pipermail/gs-devel/2008-May/007776.html
-    // uploaded PDF is a random filename assigned by multer; resized PDF has
-    // the same filename prefix but with '.pdf' appended
-    exec(`gs -q -sDEVICE=pdfwrite -sPAPERSIZE=letter -dFIXEDMEDIA -dPDFFitPage -dAutoRotatePages -dCompatibilityLevel=1.4 -o ${req.file.path}.pdf ${req.file.path}`, (err, stdout, stderr) => {
+    // Resize pages to 8.5" x 11" dimensions
+    // This absolute monstrosity is an effort of hours of googling, and is 
+    // comprised of code and docs from the following sources:
+    // 1. http://stackoverflow.com/a/7507511/2487925
+    // 2. http://stackoverflow.com/a/26989410
+    // 3. http://www.ghostscript.com/doc/9.04/Use.htm#Known_paper_sizes
+    // 4. http://ghostscript.com/pipermail/gs-devel/2008-May/007776.html
+    // It resizes PDF pages to 8.5"x11" (cf. #1, #3) (equivalent to 612x792 
+    // points), rotates landscape images to portrait (cf. #4), and fixes
+    // CropBox/MediaBox that causes incorrect dimensions for some PDFs,
+    // particularly scanned ones (cf. #2).
+    // Uploaded PDF is a random filename assigned by multer; resized PDF has
+    // the same filename prefix but with '.pdf' appended.
+    exec(`gs -q -dNOPAUSE -dBATCH -dFIXEDMEDIA -dPDFFitPage -dAutoRotatePages -sDEVICE=pdfwrite -sPAPERSIZE=letter -sOutputFile=${req.file.path}.pdf -c "<</EndPage {0 eq {[/CropBox [0 0 612 792] /PAGE pdfmark true}{false}ifelse}>> setpagedevice" -f ${req.file.path}`, (err, stdout, stderr) => {
       if (err) {
         console.error(err, stderr);
         return res.status(400).send({ error: 'Unable to process PDF. Please check that you have uploaded a valid PDF document.' });
