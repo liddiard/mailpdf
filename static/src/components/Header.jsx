@@ -98,6 +98,10 @@ export default class Header extends React.Component {
     });
   }
 
+  viewedProcessedPdf(event) {
+    ga('send', 'event', 'file', 'view_processed');
+  }
+
   render() {
     let status;
     let progress;
@@ -124,7 +128,7 @@ export default class Header extends React.Component {
       case 'complete_success':
         status = (
           <p className="status complete_success animated fadeInUp" ref="status">
-            <i className="fa fa-check" aria-hidden="true"></i> Uploaded “{this.props.file.filename}.” All pages have been sized to 8.5"x11". <a href={this.props.file.url} target="_blank">View processed PDF</a>.<sup><i className="fa fa-external-link" aria-hidden="true"></i></sup>
+            <i className="fa fa-check" aria-hidden="true"></i> Uploaded “{this.props.file.filename}.” All pages have been sized to 8.5"x11". <a href={this.props.file.url} onClick={this.viewedProcessedPdf} target="_blank">View processed PDF</a>.<sup><i className="fa fa-external-link" aria-hidden="true"></i></sup>
           </p>
         );
         break;
