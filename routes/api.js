@@ -286,7 +286,7 @@ router.post('/checkout', (req, expressRes, next) => {
 });
 
 router.get('/track/:trackingNumber', (req, expressRes, next) => {
-  Lob.letters.retrieve(req.params.trackingNumber, (err, res) => {
+  LobLive.letters.retrieve(req.params.trackingNumber, (err, res) => {
     if (err && err.status_code === 404) {
       return expressRes.render('tracking.mustache', { notFound: true, id: req.params.trackingNumber });
     }
@@ -297,6 +297,8 @@ router.get('/track/:trackingNumber', (req, expressRes, next) => {
     res.date_created = moment(res.date_created).format(dateFormat);
     res.date_modified = moment(res.date_modified).format(dateFormat);
     res.expected_delivery_date = moment(res.expected_delivery_date).format(dateFormat);
+    /*
+    // dummy tracking events for testing
     res.tracking_events = [
       {
         "id": "evnt_9e84094c9368cfb",
@@ -317,6 +319,7 @@ router.get('/track/:trackingNumber', (req, expressRes, next) => {
         "object": "tracking_event"
       }
     ];
+    */
     res.tracking_events = res.tracking_events
     .sort((a, b) => {
       return a.time < b.time;
