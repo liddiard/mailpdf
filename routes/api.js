@@ -43,9 +43,10 @@ router.post('/upload', upload.single('pdf'), (req, res, next) => {
     // resize pages to 8.5" x 11" dimensions
     // http://stackoverflow.com/a/7507511/2487925
     // http://www.ghostscript.com/doc/9.04/Use.htm#Known_paper_sizes
+    // http://ghostscript.com/pipermail/gs-devel/2008-May/007776.html
     // uploaded PDF is a random filename assigned by multer; resized PDF has
     // the same filename prefix but with '.pdf' appended
-    exec(`gs -q -sDEVICE=pdfwrite -sPAPERSIZE=letter -dFIXEDMEDIA -dPDFFitPage -dCompatibilityLevel=1.4 -o ${req.file.path}.pdf ${req.file.path}`, (err, stdout, stderr) => {
+    exec(`gs -q -sDEVICE=pdfwrite -sPAPERSIZE=letter -dFIXEDMEDIA -dPDFFitPage -dAutoRotatePages -dCompatibilityLevel=1.4 -o ${req.file.path}.pdf ${req.file.path}`, (err, stdout, stderr) => {
       if (err) {
         console.error(err, stderr);
         return res.status(400).send({ error: 'Unable to process PDF. Please check that you have uploaded a valid PDF document.' });
