@@ -232,7 +232,7 @@ export default class Send extends React.Component {
         {emailModal}
         {progressModal}
 
-        <p>Mail is typically delivered by USPS within 4–6 days.</p>
+        <p>Mail is usually delivered by USPS within 4–6 business days.</p>
         <p>You will receive a tracking number by email after checkout.</p>
 
       </section>
