@@ -195,6 +195,7 @@ footer {
     text-align: center;
     box-shadow: 0 0 4px rgba(0,0,0, 0.5);
     text-shadow: none;
+    z-index: 1000;
 
     &.offline {
         color: black;
