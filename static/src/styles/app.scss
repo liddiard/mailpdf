@@ -187,6 +187,21 @@ footer {
     display: none;
 }
 
+.banner {
+    position: fixed;
+    top: 0;
+    left: 0; right: 0;
+    padding: 1em;
+    text-align: center;
+    box-shadow: 0 0 4px rgba(0,0,0, 0.5);
+    text-shadow: none;
+
+    &.offline {
+        color: black;
+        background-color: yellow;
+    }
+}
+
 .email.modal {
     input[type=email] {
         display: block;

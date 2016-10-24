@@ -16,6 +16,7 @@ class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      isOnline: true,
       file: { // populated by upload api response
         filename: '',
         uid: '',
@@ -51,6 +52,22 @@ class App extends React.Component {
     this.verifyAddress = this.verifyAddress.bind(this);
     this.updateOptions = this.updateOptions.bind(this);
     this.sentSuccessfully = this.sentSuccessfully.bind(this);
+  }
+
+  componentDidMount() {
+    if (this.props.demo) {
+      // wait 1s for DOM/animations before showing popup
+      setTimeout(() => { 
+        alert('This application is running in demo mode because "demo" is in the URL.\n\nEverything will work normally, except your credit card won\'t be charged and your document won\'t actually be sent.\n\nIf you meant to use this application for real, remove the word "demo" from the URL.');
+      }, 1000);
+    }
+    window.setInterval(() => {
+      request
+      .head('/favicon.ico')
+      .end((err, res) => {
+        this.setState({ isOnline: !err });
+      });
+    }, 1000 * 10);
   }
 
   fileUploadHasBegun() {
@@ -99,15 +116,6 @@ class App extends React.Component {
     }
   }
 
-  componentDidMount() {
-    if (this.props.demo) {
-      // wait 1s for DOM/animations before showing popup
-      setTimeout(() => { 
-        alert('This application is running in demo mode because "demo" is in the URL.\n\nEverything will work normally, except your credit card won\'t be charged and your document won\'t actually be sent.\n\nIf you meant to use this application for real, remove the word "demo" from the URL.');
-      }, 1000);
-    }
-  }
-
   verifyAddress(isFrom) {
     let address = isFrom ? this.state.fromAddress : this.state.toAddress;
     request
@@ -139,8 +147,17 @@ class App extends React.Component {
   }
 
   render() {
+    let offlineBanner;
+    if (!this.state.isOnline) {
+      offlineBanner = (
+        <div className="offline banner animated fadeInDownBig">
+          <i className="fa fa-exclamation-triangle" aria-hidden="true"></i> Your internet connection has gone offline. Some functionality will not work until connection is restored.
+        </div>
+      );
+    }
     return (
       <main>
+        {offlineBanner}
         <div id="drop-mask">Release to drop!</div>
         <Header costs={this.props.costs} file={this.state.file}
                 fileUploadHasBegun={this.fileUploadHasBegun}
