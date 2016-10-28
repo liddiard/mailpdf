@@ -221,7 +221,7 @@ export default class Send extends React.Component {
             <input type="checkbox" name="returnEnvelope"
                    checked={this.props.options.returnEnvelope}
                    onChange={this.handleReturnEnvelopeChange} tabIndex="5" />
-            Include a return envelope <span className="price">+{utils.formatMoney(this.props.costs.returnEnvelope)}</span>
+            Include blank return envelope <span className="price">+{utils.formatMoney(this.props.costs.returnEnvelope)}</span>
           </label>
         </div>
         {error}
