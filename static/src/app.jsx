@@ -65,7 +65,10 @@ class App extends React.Component {
       request
       .head('/favicon.ico')
       .end((err, res) => {
-        this.setState({ isOnline: !err });
+        const online = !err;
+        if (this.state.online !== online) {
+          this.setState({ isOnline: online });
+        }
       });
     }, 1000 * 10);
   }
