@@ -1,6 +1,11 @@
 node_modules/
-static/dist/bundle.js
+dist/
 uploads/
+.env
+.env.*
+!.env.example
 .DS_Store
 npm-debug.log
 devserver.sh
+*.swp
+*.swo
