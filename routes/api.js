@@ -134,7 +134,7 @@ router.post('/checkout', async (req, res) => {
   const email = req.body.email
 
   if (!(uid && numPages && mailType && cost && fromAddress && toAddress && email) ||
-      typeof returnEnvelope !== 'boolean' || typeof demo !== 'boolean') {
+    typeof returnEnvelope !== 'boolean' || typeof demo !== 'boolean') {
     return res.status(400).send({ error: 'Missing at least one of the following required parameters in the request body: "uid", "numPages", "mailType", "returnEnvelope", "cost", "fromAddress", "toAddress", "email".' })
   }
 
@@ -283,11 +283,11 @@ router.post('/finalize', async (req, res) => {
   const letterOptions = {
     from: {
       name: fromAddress.name || '',
-      address_line1: fromAddress.line1  || '',
+      address_line1: fromAddress.line1 || '',
       address_line2: fromAddress.line2 || '',
-      address_city: fromAddress.city  || '',
-      address_state: fromAddress.state  || '',
-      address_zip: fromAddress.zip  || '',
+      address_city: fromAddress.city || '',
+      address_state: fromAddress.state || '',
+      address_zip: fromAddress.zip || '',
       address_country: 'US',
     },
     to: {
@@ -304,6 +304,8 @@ router.post('/finalize', async (req, res) => {
     double_sided: false,
     address_placement: 'insert_blank_page',
     return_envelope: returnEnvelope,
+    // required by Lob; these are user-initiated, non-promotional mailpieces
+    use_type: 'operational',
     // attach order information to the letter for later reference
     metadata: {
       email: email,
@@ -326,11 +328,11 @@ router.post('/finalize', async (req, res) => {
   catch (err) {
     console.error('error creating lob letter', err)
     if (err.status_code === 422) { // bad request
-      await emailAdmin('[MailAPDF.Online] Error creating Lob letter (bad request)', JSON.stringify(err, null, 2))
+      await emailAdmin('[MailAPDF.Online] Error creating Lob letter (bad request)', serializeError(err))
       return res.status(400).send({ error: `Error mailing PDF. ${err.message} Your card has not been charged.` })
     }
     else {
-      await emailAdmin('[MailAPDF.Online] Error creating Lob letter', JSON.stringify(err, null, 2))
+      await emailAdmin('[MailAPDF.Online] Error creating Lob letter', serializeError(err))
       return res.status(500).send({ error: 'Internal error mailing your document. Your card has not been charged, and your document has not been sent. An administrator has been notified.' })
     }
   }
@@ -346,7 +348,7 @@ router.post('/finalize', async (req, res) => {
     // the user. This could be a programming error or a malicious
     // user.
     console.error('ERROR CAPTURING CHARGE FROM CUSTOMER', err)
-    await emailAdmin('[MailAPDF.Online] WARNING IMMEDIATE ACTION REQUIRED: Error capturing charge from customer', JSON.stringify(err, null, 2))
+    await emailAdmin('[MailAPDF.Online] WARNING IMMEDIATE ACTION REQUIRED: Error capturing charge from customer', serializeError(err))
     return res.status(500).send({ error: 'Error charging your credit card. An administrator has been notified.' })
   }
 
@@ -408,13 +410,13 @@ router.get('/track/:trackingNumber', async (req, res) => {
     letter.expected_delivery_date = formatDate(letter.expected_delivery_date)
   }
   letter.tracking_events = (letter.tracking_events || [])
-  .sort((a, b) => new Date(b.time) - new Date(a.time)) // most recent first
-  .map(event => {
-    event.time = formatDate(event.time, { includeTime: true })
-    const location = zipcodes.lookup(event.location)
-    event.location = location ? [location.city, location.state].join(', ') : event.location
-    return event
-  })
+    .sort((a, b) => new Date(b.time) - new Date(a.time)) // most recent first
+    .map(event => {
+      event.time = formatDate(event.time, { includeTime: true })
+      const location = zipcodes.lookup(event.location)
+      event.location = location ? [location.city, location.state].join(', ') : event.location
+      return event
+    })
   res.render('tracking.mustache', letter)
 })
 
@@ -429,6 +431,10 @@ async function countPages(pdf) {
     ({ stdout } = await execFileAsync('gs', [
       '-q',
       '-dNODISPLAY',
+      // Ghostscript 9.50+ enables SAFER by default, which blocks the
+      // PostScript `file` operator below from reading the PDF. Grant read
+      // access to just this file rather than disabling the sandbox entirely.
+      `--permit-file-read=${pdf}`,
       '-c',
       `(${pdf}) (r) file runpdfbegin pdfpagecount = quit`
     ]))
@@ -441,7 +447,7 @@ async function countPages(pdf) {
   const stdoutLines = stdout.split('\n').filter(line => { return line.length })
   // ghostscript will sometimes print warnings on previous lines that we
   // can't seem to suppress
-  const numPages = parseInt(stdoutLines[stdoutLines.length-1])
+  const numPages = parseInt(stdoutLines[stdoutLines.length - 1])
   if (isNaN(numPages)) {
     await emailAdmin('[MailAPDF.Online] Error parsing Ghostscript output', stdout)
     throw httpError(500, 'Internal server error.')
@@ -474,7 +480,7 @@ async function resizePdf(pdf) {
       '-dBATCH',
       '-dFIXEDMEDIA',
       '-dPDFFitPage',
-      '-dAutoRotatePages',
+      '-dAutoRotatePages=/PageByPage',
       '-sDEVICE=pdfwrite',
       '-sPAPERSIZE=letter',
       `-sOutputFile=${pdf}.pdf`,
@@ -546,6 +552,51 @@ function ordinalSuffix(n) {
   const suffixes = ['th', 'st', 'nd', 'rd']
   const value = n % 100
   return suffixes[(value - 20) % 10] || suffixes[value] || suffixes[0]
+}
+
+/**
+ * Serialize an error for logging or emailing. Error objects returned by SDKs
+ * like Lob and Stripe contain circular references (request/response sockets),
+ * so a plain `JSON.stringify` throws. Extract only the useful fields instead.
+ * @param {unknown} err error to serialize
+ * @returns {string} pretty-printed JSON representation of the error
+ */
+function serializeError(err) {
+  if (!(err instanceof Error)) {
+    try {
+      return JSON.stringify(err, null, 2)
+    }
+    catch {
+      return String(err)
+    }
+  }
+
+  const details = {
+    name: err.name,
+    message: err.message,
+    stack: err.stack,
+    status_code: err.status_code,
+    statusCode: err.statusCode,
+    code: err.code,
+    type: err.type,
+    requestId: err.requestId
+  }
+
+  const response = err._response ?? err.response
+  if (response) {
+    details.response = {
+      status: response.status,
+      statusText: response.statusText,
+      data: response.data
+    }
+  }
+
+  return JSON.stringify(details, (key, value) => {
+    if (typeof value === 'bigint') {
+      return value.toString()
+    }
+    return value
+  }, 2)
 }
 
 /**

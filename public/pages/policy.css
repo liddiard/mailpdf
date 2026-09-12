@@ -5,7 +5,7 @@
 
 body {
   background-color: var(--primary);
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif;
   margin: 0 auto;
   border: 0;
   padding: 0 1em;
@@ -26,6 +26,11 @@ main {
   box-shadow: 0 0 5px rgb(0 0 0 / 0.25);
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   margin: 1em 0 0.25em;
 }
