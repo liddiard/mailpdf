@@ -54,7 +54,7 @@ const layout = ({ heading, body }: { heading: string; body: string }): string =>
         <td align="center" style="padding: 24px 12px;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 560px; background-color: #ffffff; border-radius: 4px; overflow: hidden;">
             <tr>
-              <td style="background-color: #31c9e8; padding: 24px; text-align: center;">
+              <td style="background-color: #0a3161; padding: 24px; text-align: center;">
                 <h1 style="margin: 0; font-size: 22px; color: #ffffff;">${escapeHtml(heading)}</h1>
               </td>
             </tr>
@@ -95,7 +95,7 @@ export const buildTrackingEmail = ({
   const htmlParts = [
     '<p style="margin: 0 0 16px;">Your document is on its way.</p>',
     '<p style="margin: 0 0 4px;">We mailed your document to:</p>',
-    `<p style="margin: 0 0 16px;"><strong>${escapeHtml(toLine1)}</strong></p>`
+    `<p style="margin: 0 0 16px;">${escapeHtml(toLine1)}</p>`
   ]
 
   if (uspsTracking) {
@@ -108,7 +108,7 @@ export const buildTrackingEmail = ({
 
   textLines.push('Track your document:', trackUrl)
   htmlParts.push(
-    `<p style="margin: 0;"><a href="${escapeHtml(trackUrl)}" style="color: #1a8ba8;">Track your document</a></p>`
+    `<p style="margin: 0;"><a href="${escapeHtml(trackUrl)}" style="color: #1a8ba8;"><strong>Track your document<strong></a></p>`
   )
 
   return {
