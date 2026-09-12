@@ -438,9 +438,9 @@ router.post('/finalize', async (req: Request, res: Response) => {
   res.status(204).send()
   // email user with tracking link or number
   if (extraService) {
-    await emailTracking(email, toAddress.line1, lobRes.tracking_number ?? '', true)
+    await emailTracking(email, toAddress, lobRes.tracking_number ?? '', true)
   } else {
-    await emailTracking(email, toAddress.line1, lobRes.id, false)
+    await emailTracking(email, toAddress, lobRes.id, false)
   }
 })
 
@@ -781,13 +781,13 @@ async function emailAdmin(subject: string, body: string): Promise<void> {
 /**
  * Email a customer their tracking information.
  * @param email recipient email address
- * @param toLine1 first line of the destination address
+ * @param toAddress destination address
  * @param trackingNumber Lob letter id or USPS tracking number
  * @param uspsTracking whether the tracking number is a USPS number
  */
 async function emailTracking(
   email: string,
-  toLine1: string,
+  toAddress: Address,
   trackingNumber: string,
   uspsTracking: boolean
 ): Promise<void> {
@@ -795,7 +795,7 @@ async function emailTracking(
     ? `https://tools.usps.com/go/TrackConfirmAction?qtc_tLabels1=${trackingNumber}`
     : `https://mailpdf.online/track/${trackingNumber}`
   const { subject, text, html } = buildTrackingEmail({
-    toLine1,
+    toAddress,
     trackingNumber,
     trackUrl,
     uspsTracking

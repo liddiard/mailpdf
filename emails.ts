@@ -4,6 +4,8 @@
  * handed directly to Amazon SES.
  */
 
+import type { Address } from './types.ts'
+
 /** The rendered pieces of an email message. */
 export interface EmailContent {
   subject: string
@@ -13,11 +15,22 @@ export interface EmailContent {
 
 /** Inputs for the customer tracking email. */
 export interface TrackingEmailOptions {
-  toLine1: string
+  toAddress: Address
   trackingNumber: string
   trackUrl: string
   uspsTracking: boolean
 }
+
+/**
+ * Format a U.S. mailing address into the lines displayed in emails, omitting
+ * any blank optional lines.
+ * @param address recipient address
+ * @returns address lines from top to bottom
+ */
+const formatAddressLines = ({ name, line1, line2, city, state, zip }: Address): string[] =>
+  [name, line1, line2, `${city}, ${state} ${zip}`].filter((line): line is string =>
+    Boolean(line && line.trim())
+  )
 
 /** HTML entity replacements used by `escapeHtml`. */
 const HTML_ESCAPES: Record<string, string> = {
@@ -82,20 +95,27 @@ const layout = ({ heading, body }: { heading: string; body: string }): string =>
  * @returns the rendered subject, text, and HTML
  */
 export const buildTrackingEmail = ({
-  toLine1,
+  toAddress,
   trackingNumber,
   trackUrl,
   uspsTracking
 }: TrackingEmailOptions): EmailContent => {
   const subject = uspsTracking
-    ? 'Your document has been mailed (USPS tracking number included)'
-    : 'Your document has been mailed'
+    ? '📫 Your document has been mailed (USPS tracking number included)'
+    : '📫 Your document has been mailed'
 
-  const textLines = ['Your document is on its way.', '', 'We mailed your document to:', toLine1, '']
+  const addressLines = formatAddressLines(toAddress)
+  const textLines = [
+    'Your document is on its way.',
+    '',
+    'We mailed your document to:',
+    ...addressLines,
+    ''
+  ]
   const htmlParts = [
     '<p style="margin: 0 0 16px;">Your document is on its way.</p>',
     '<p style="margin: 0 0 4px;">We mailed your document to:</p>',
-    `<p style="margin: 0 0 16px;">${escapeHtml(toLine1)}</p>`
+    `<p style="margin: 0 0 16px;">${addressLines.map(escapeHtml).join('<br>')}</p>`
   ]
 
   if (uspsTracking) {
