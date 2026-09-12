@@ -1,12 +1,27 @@
-import PropTypes from 'prop-types'
+import type { Address as AddressFields } from '../../types.ts'
+import type { AddressState } from '../types.ts'
+import Address from './Address.tsx'
 
-import Address from './Address.jsx'
+/** Props for the envelope and success overlay. */
+interface EnvelopeProps {
+  fileUploadHasBegun: boolean
+  fromFields: AddressState
+  toFields: AddressState
+  updateAddress: (isFrom: boolean, field: Partial<AddressFields>) => void
+  sentSuccessfully: boolean
+}
 
 /**
  * The envelope containing both address forms and the success overlay shown
  * after an order is sent.
  */
-const Envelope = ({ fileUploadHasBegun, fromFields, toFields, updateAddress, sentSuccessfully }) => {
+const Envelope = ({
+  fileUploadHasBegun,
+  fromFields,
+  toFields,
+  updateAddress,
+  sentSuccessfully
+}: EnvelopeProps) => {
   const reloadPage = () => {
     location.reload()
   }
@@ -18,12 +33,18 @@ const Envelope = ({ fileUploadHasBegun, fromFields, toFields, updateAddress, sen
     <div id="envelope-container">
       <div id="envelope" className={`animated ${animationClass}`}>
         <img className="stamp" src="/img/stamp.png" alt="" />
-        <Address from={true} fields={fromFields}
-                fileUploadHasBegun={fileUploadHasBegun}
-                updateAddress={updateAddress} />
-        <Address from={false} fields={toFields}
-                fileUploadHasBegun={fileUploadHasBegun}
-                updateAddress={updateAddress} />
+        <Address
+          from={true}
+          fields={fromFields}
+          fileUploadHasBegun={fileUploadHasBegun}
+          updateAddress={updateAddress}
+        />
+        <Address
+          from={false}
+          fields={toFields}
+          fileUploadHasBegun={fileUploadHasBegun}
+          updateAddress={updateAddress}
+        />
       </div>
       <div id="send-success" className={sendSuccessClass}>
         <div>
@@ -37,14 +58,6 @@ const Envelope = ({ fileUploadHasBegun, fromFields, toFields, updateAddress, sen
       </div>
     </div>
   )
-}
-
-Envelope.propTypes = {
-  fileUploadHasBegun: PropTypes.bool.isRequired,
-  fromFields: PropTypes.object.isRequired,
-  toFields: PropTypes.object.isRequired,
-  updateAddress: PropTypes.func.isRequired,
-  sentSuccessfully: PropTypes.bool.isRequired
 }
 
 export default Envelope

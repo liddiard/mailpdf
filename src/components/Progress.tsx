@@ -25,14 +25,26 @@ SOFTWARE.
 // pulled out of https://github.com/paramaggarwal/react-progressbar until
 // https://github.com/paramaggarwal/react-progressbar/issues/15 is resolved
 
-import PropTypes from 'prop-types'
+import type { CSSProperties, ReactNode } from 'react'
 
-const Progress = ({ completed: completedProp, color, height = 10, children }) => {
+/** Props for the progress bar. */
+interface ProgressProps {
+  completed: number | string
+  color?: string
+  height?: number | string
+  children?: ReactNode
+}
+
+const Progress = ({ completed: completedProp, color, height = 10, children }: ProgressProps) => {
   let completed = +completedProp
-  if (Number.isNaN(completed) || completed < 0) { completed = 0 }
-  if (completed > 100) { completed = 100 }
+  if (Number.isNaN(completed) || completed < 0) {
+    completed = 0
+  }
+  if (completed > 100) {
+    completed = 100
+  }
 
-  const style = {
+  const style: CSSProperties = {
     backgroundColor: color || '#0BD318',
     width: completed + '%',
     transition: 'width 200ms',
@@ -41,16 +53,11 @@ const Progress = ({ completed: completedProp, color, height = 10, children }) =>
 
   return (
     <div className="progressbar-container">
-      <div className="progressbar-progress" style={style}>{children}</div>
+      <div className="progressbar-progress" style={style}>
+        {children}
+      </div>
     </div>
   )
-}
-
-Progress.propTypes = {
-  completed: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-  color: PropTypes.string,
-  height: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-  children: PropTypes.node
 }
 
 export default Progress

@@ -50,25 +50,43 @@ for email.
 
 - `npm run dev:server` — run only the Express API (with `--watch`)
 - `npm run dev:client` — run only the Vite dev server
-- `npm run build` — build the client into `dist/`
+- `npm run typecheck` — type-check the client and server with `tsc`
+- `npm run lint` — lint the codebase with ESLint
+- `npm run format` — format the codebase with Prettier
+- `npm run format:check` — check formatting without writing changes
+- `npm run build` — type-check and build the client into `dist/`
 - `npm start` — run the production server (serves the built client from `dist/`)
+
+The server is written in TypeScript and runs directly via Node's native type
+stripping (no server build step). See [`tsconfig.node.json`](tsconfig.node.json)
+for the server compiler options and [`tsconfig.app.json`](tsconfig.app.json) for
+the client.
+
+### Git hooks
+
+`npm install` installs a [Husky](https://typicode.github.io/husky/) `pre-commit`
+hook (via the `prepare` script). Before each commit it runs
+[`lint-staged`](https://github.com/lint-staged/lint-staged), which lints and
+formats the files being committed with ESLint and Prettier, then type-checks the
+whole project with `tsc`. Code style is single-quoted strings with no
+semicolons (`semi: false`) and no trailing commas.
 
 ## Environment variables
 
 All variables are documented in [`.env.example`](.env.example).
 
-| Variable               | Description                                                                 |
-| ---------------------- | --------------------------------------------------------------------------- |
-| `LOB_API_KEY_TEST`     | Lob test API key (used in demo mode)                                        |
-| `LOB_API_KEY`          | Lob live API key                                                            |
-| `STRIPE_API_KEY_TEST`  | Stripe test secret key (used in demo mode)                                  |
-| `STRIPE_API_KEY`       | Stripe live secret key                                                      |
-| `AWS_REGION`           | AWS region for SES (e.g. `us-east-1`)                                       |
-| `AWS_ACCESS_KEY_ID`    | AWS access key ID for sending email via SES                                 |
-| `AWS_SECRET_ACCESS_KEY`| AWS secret access key for sending email via SES                             |
-| `ADMIN_EMAIL`          | Email address that receives administrator error alerts                      |
-| `PORT`                 | Port the server listens on (optional; defaults to `3000`)                   |
-| `NODE_ENV`             | Set to `production` to enable rate limiting and hide stack traces (optional) |
+| Variable                | Description                                                                  |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `LOB_API_KEY_TEST`      | Lob test API key (used in demo mode)                                         |
+| `LOB_API_KEY`           | Lob live API key                                                             |
+| `STRIPE_API_KEY_TEST`   | Stripe test secret key (used in demo mode)                                   |
+| `STRIPE_API_KEY`        | Stripe live secret key                                                       |
+| `AWS_REGION`            | AWS region for SES (e.g. `us-east-1`)                                        |
+| `AWS_ACCESS_KEY_ID`     | AWS access key ID for sending email via SES                                  |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret access key for sending email via SES                              |
+| `ADMIN_EMAIL`           | Email address that receives administrator error alerts                       |
+| `PORT`                  | Port the server listens on (optional; defaults to `3000`)                    |
+| `NODE_ENV`              | Set to `production` to enable rate limiting and hide stack traces (optional) |
 
 ## Setup ([Dokku](http://dokku.viewdocs.io/dokku/))
 
@@ -77,7 +95,7 @@ All variables are documented in [`.env.example`](.env.example).
 - Set the required environment variables (see [`.env.example`](.env.example)):
   `LOB_API_KEY_TEST`, `LOB_API_KEY`, `STRIPE_API_KEY_TEST`, `STRIPE_API_KEY`,
   `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `ADMIN_EMAIL`
-- Set Nginx max upload size to the max upload size specified in (app.js) by following [this example](http://dokku.viewdocs.io/dokku/configuration/nginx/#customizing-via-configuration-files-included-by-the-default-tem)
+- Set Nginx max upload size to the max upload size specified in (app.ts) by following [this example](http://dokku.viewdocs.io/dokku/configuration/nginx/#customizing-via-configuration-files-included-by-the-default-tem)
 - Set up a [one-off process](http://dokku.viewdocs.io/dokku/deployment/one-off-processes/) to delete old uploads. This example deletes files older than 1 day: `find uploads/* -mtime +1 -exec rm {} \;`.
 
 ## Routes

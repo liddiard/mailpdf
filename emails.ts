@@ -4,27 +4,45 @@
  * handed directly to Amazon SES.
  */
 
+/** The rendered pieces of an email message. */
+export interface EmailContent {
+  subject: string
+  text: string
+  html: string
+}
+
+/** Inputs for the customer tracking email. */
+export interface TrackingEmailOptions {
+  toLine1: string
+  trackingNumber: string
+  trackUrl: string
+  uspsTracking: boolean
+}
+
+/** HTML entity replacements used by `escapeHtml`. */
+const HTML_ESCAPES: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;'
+}
+
 /**
  * Escape a value for safe interpolation into HTML.
- * @param {string} value raw value, potentially containing user-provided text
- * @returns {string} HTML-escaped value
+ * @param value raw value, potentially containing user-provided text
+ * @returns HTML-escaped value
  */
-const escapeHtml = value =>
-  String(value).replace(/[&<>"']/g, char => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;'
-  }[char]))
+const escapeHtml = (value: string): string =>
+  String(value).replace(/[&<>"']/g, char => HTML_ESCAPES[char] ?? char)
 
 /**
  * Wrap email body content in a minimal, table-based layout that renders
  * consistently across email clients.
- * @param {{heading: string, body: string}} content
- * @returns {string} complete HTML document
+ * @param content heading and body HTML
+ * @returns complete HTML document
  */
-const layout = ({ heading, body }) => `<!DOCTYPE html>
+const layout = ({ heading, body }: { heading: string; body: string }): string => `<!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8" />
@@ -60,21 +78,20 @@ const layout = ({ heading, body }) => `<!DOCTYPE html>
 
 /**
  * Build the customer email containing their mailing/tracking information.
- * @param {{toLine1: string, trackingNumber: string, trackUrl: string, uspsTracking: boolean}} options
- * @returns {{subject: string, text: string, html: string}}
+ * @param options tracking details to include in the email
+ * @returns the rendered subject, text, and HTML
  */
-export const buildTrackingEmail = ({ toLine1, trackingNumber, trackUrl, uspsTracking }) => {
+export const buildTrackingEmail = ({
+  toLine1,
+  trackingNumber,
+  trackUrl,
+  uspsTracking
+}: TrackingEmailOptions): EmailContent => {
   const subject = uspsTracking
     ? 'Your document has been mailed (USPS tracking number included)'
     : 'Your document has been mailed'
 
-  const textLines = [
-    'Your document is on its way.',
-    '',
-    'We mailed your document to:',
-    toLine1,
-    ''
-  ]
+  const textLines = ['Your document is on its way.', '', 'We mailed your document to:', toLine1, '']
   const htmlParts = [
     '<p style="margin: 0 0 16px;">Your document is on its way.</p>',
     '<p style="margin: 0 0 4px;">We mailed your document to:</p>',
@@ -82,11 +99,7 @@ export const buildTrackingEmail = ({ toLine1, trackingNumber, trackUrl, uspsTrac
   ]
 
   if (uspsTracking) {
-    textLines.push(
-      'It was sent with USPS tracking. Your tracking number is:',
-      trackingNumber,
-      ''
-    )
+    textLines.push('It was sent with USPS tracking. Your tracking number is:', trackingNumber, '')
     htmlParts.push(
       '<p style="margin: 0 0 4px;">It was sent with USPS tracking. Your tracking number is:</p>',
       `<p style="margin: 0 0 16px;"><strong>${escapeHtml(trackingNumber)}</strong></p>`

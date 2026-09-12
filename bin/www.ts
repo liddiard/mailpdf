@@ -7,7 +7,8 @@
 import http from 'http'
 import debug from 'debug'
 
-import app from '../app.js'
+import app from '../app.ts'
+import { env } from '../env.ts'
 
 const log = debug('mailpdf:server')
 
@@ -15,7 +16,7 @@ const log = debug('mailpdf:server')
  * Get port from environment and store in Express.
  */
 
-const port = normalizePort(process.env.PORT || '3000')
+const port = normalizePort(String(env.port))
 app.set('port', port)
 
 /**
@@ -33,10 +34,11 @@ server.on('error', onError)
 server.on('listening', onListening)
 
 /**
- * Normalize a port into a number, string, or false.
+ * Normalize a port into a number or a named pipe path.
+ * @param val raw port value
+ * @returns the port number, or a named pipe path when `val` is not numeric
  */
-
-function normalizePort(val) {
+function normalizePort(val: string): number | string {
   const port = parseInt(val, 10)
 
   if (isNaN(port)) {
@@ -49,21 +51,19 @@ function normalizePort(val) {
     return port
   }
 
-  return false
+  throw new Error(`Invalid port: ${val}`)
 }
 
 /**
  * Event listener for HTTP server "error" event.
+ * @param error error emitted by the server
  */
-
-function onError(error) {
+function onError(error: NodeJS.ErrnoException): void {
   if (error.syscall !== 'listen') {
     throw error
   }
 
-  const bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port
+  const bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port
 
   // handle specific listen errors with friendly messages
   switch (error.code) {
@@ -83,11 +83,15 @@ function onError(error) {
 /**
  * Event listener for HTTP server "listening" event.
  */
-
-function onListening() {
+function onListening(): void {
   const addr = server.address()
-  const bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr.port
+  let bind: string
+  if (addr === null) {
+    bind = 'unknown'
+  } else if (typeof addr === 'string') {
+    bind = 'pipe ' + addr
+  } else {
+    bind = 'port ' + addr.port
+  }
   log('Listening on ' + bind)
 }

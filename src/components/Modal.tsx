@@ -1,14 +1,21 @@
 import { useEffect } from 'react'
-import PropTypes from 'prop-types'
+import type { ReactNode } from 'react'
+
+/** Props for the modal dialog. */
+interface ModalProps {
+  children?: ReactNode
+  onClose?: () => void
+  className?: string
+}
 
 /**
  * A minimal accessible modal dialog. Renders a dimmed backdrop with a
  * centered dialog, and closes on backdrop click or the Escape key.
  */
-const Modal = ({ children, onClose, className = '' }) => {
+const Modal = ({ children, onClose, className = '' }: ModalProps) => {
   // close the modal when the user presses Escape
   useEffect(() => {
-    const handleKeyDown = event => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && onClose) {
         onClose()
       }
@@ -29,12 +36,6 @@ const Modal = ({ children, onClose, className = '' }) => {
       </div>
     </div>
   )
-}
-
-Modal.propTypes = {
-  children: PropTypes.node,
-  onClose: PropTypes.func,
-  className: PropTypes.string
 }
 
 export default Modal

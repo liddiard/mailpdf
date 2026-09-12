@@ -3,11 +3,14 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import express from 'express'
+import type { NextFunction, Request, Response } from 'express'
 import logger from 'morgan'
 import { rateLimit } from 'express-rate-limit'
 import mustache from 'mustache-express'
 
-import api, { UPLOAD_DIR } from './routes/api.js'
+import api, { UPLOAD_DIR } from './routes/api.ts'
+import { env } from './env.ts'
+import type { HttpError } from './types.ts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -40,8 +43,8 @@ app.use('/uploads', express.static(UPLOAD_DIR))
 app.use('/', api)
 
 // catch 404 and forward to error handler
-app.use((req, res, next) => {
-  const err = new Error('Not Found')
+app.use((_req: Request, _res: Response, next: NextFunction) => {
+  const err: HttpError = new Error('Not Found')
   err.status = 404
   next(err)
 })
@@ -49,7 +52,7 @@ app.use((req, res, next) => {
 // development error handler
 // will print stacktrace
 if (app.get('env') === 'development') {
-  app.use((err, req, res, next) => {
+  app.use((err: HttpError, _req: Request, _res: Response, next: NextFunction) => {
     console.error(err)
     next(err)
   })
@@ -57,7 +60,7 @@ if (app.get('env') === 'development') {
 
 // production error handler
 // no stacktraces leaked to user
-app.use((err, req, res, next) => {
+app.use((err: HttpError, _req: Request, res: Response, next: NextFunction) => {
   if (res.headersSent) {
     return next(err)
   }
@@ -66,7 +69,7 @@ app.use((err, req, res, next) => {
 })
 
 // rate limiting ===============================================================
-if (process.env.NODE_ENV === 'production') {
+if (env.nodeEnv === 'production') {
   const apiLimiter = rateLimit({
     windowMs: 10 * 60 * 1000, // 10 minute window
     max: 40, // start blocking after 40 requests

@@ -27,7 +27,7 @@ html {
 body {
   color: white;
   background-color: var(--primary);
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   margin: 0 auto;
   border: 0;
   -webkit-font-smoothing: antialiased;
@@ -58,8 +58,7 @@ button {
   cursor: pointer;
   font-size: 1.5em;
   border-top: var(--border-width) solid var(--secondary);
-  border-bottom: var(--border-width) solid
-    color-mix(in oklab, var(--secondary), black 10%);
+  border-bottom: var(--border-width) solid color-mix(in oklab, var(--secondary), black 10%);
   outline: none;
   text-shadow: var(--text-shadow);
   transition: background-color 0.25s;
@@ -70,8 +69,7 @@ button {
 
   &:active {
     background-color: color-mix(in oklab, var(--secondary), black 5%);
-    border-top: var(--border-width) solid
-      color-mix(in oklab, var(--secondary), black 15%);
+    border-top: var(--border-width) solid color-mix(in oklab, var(--secondary), black 15%);
     border-bottom-color: color-mix(in oklab, var(--secondary), black 5%);
   }
 
@@ -89,8 +87,8 @@ fieldset {
   padding: 0;
 }
 
-input[type="text"],
-input[type="email"] {
+input[type='text'],
+input[type='email'] {
   border: none;
   border-radius: 0;
   border-bottom: 1px solid rgb(0 0 0 / 0.25);
@@ -123,7 +121,7 @@ header {
   .upload {
     margin: 1em 0;
 
-    input[type="file"] {
+    input[type='file'] {
       display: none;
     }
 
@@ -215,7 +213,7 @@ footer {
 }
 
 .email.modal {
-  input[type="email"] {
+  input[type='email'] {
     display: block;
     margin: 1em auto;
     font-size: 1.5em;
@@ -282,11 +280,7 @@ body.dz-drag-hover #drop-mask {
   box-shadow: 2px 2px 1px rgb(0 0 0 / 0.25);
   border: 1px solid rgb(255 255 255 / 0.5);
   position: relative;
-  transform: translate3d(
-    0,
-    100%,
-    0
-  ); /* prevent "flash" before animate.css loads */
+  transform: translate3d(0, 100%, 0); /* prevent "flash" before animate.css loads */
 
   .stamp {
     float: right;
@@ -364,11 +358,11 @@ body.dz-drag-hover #drop-mask {
         width: 30px;
         flex-grow: 1;
 
-        &[name="state"] {
+        &[name='state'] {
           flex-grow: 0.25;
         }
 
-        &[name="zip"] {
+        &[name='zip'] {
           flex-grow: 0.5;
         }
       }

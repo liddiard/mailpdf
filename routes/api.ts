@@ -5,14 +5,28 @@ import { promisify } from 'util'
 import { fileURLToPath } from 'url'
 
 import express from 'express'
+import type { Request, Response } from 'express'
 import multer from 'multer'
 import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2'
 import Lob from 'lob'
+import type { LobLetter, LobLetterCreateOptions } from 'lob'
 import Stripe from 'stripe'
 import zipcodes from 'zipcodes'
 
-import { calculateCost } from '../costs.js'
-import { buildTrackingEmail } from '../emails.js'
+import { calculateCost } from '../costs.ts'
+import { buildTrackingEmail } from '../emails.ts'
+import { env } from '../env.ts'
+import type {
+  Address,
+  CheckoutRequest,
+  CheckoutResponse,
+  FinalizeRequest,
+  HttpError,
+  MailType,
+  UploadResponse,
+  VerifyAddressRequest,
+  VerifyAddressResponse
+} from '../types.ts'
 
 const execFileAsync = promisify(execFile)
 
@@ -22,31 +36,28 @@ export const UPLOAD_DIR = path.join(__dirname, '..', 'uploads')
 
 const PAGE_LIMIT = 60
 
-const LobTest = new Lob(process.env.LOB_API_KEY_TEST)
-const LobLive = new Lob(process.env.LOB_API_KEY)
-const stripeTest = new Stripe(process.env.STRIPE_API_KEY_TEST)
-const stripeLive = new Stripe(process.env.STRIPE_API_KEY)
+const LobTest = new Lob(env.lobApiKeyTest)
+const LobLive = new Lob(env.lobApiKey)
+const stripeTest = new Stripe(env.stripeApiKeyTest)
+const stripeLive = new Stripe(env.stripeApiKey)
 
 /**
  * Whether Amazon SES credentials are configured. Credentials and region are
  * read from the standard AWS environment variables.
- * @returns {boolean}
+ * @returns true when all required SES credentials are present
  */
-const isEmailConfigured = () => Boolean(
-  process.env.AWS_REGION &&
-  process.env.AWS_ACCESS_KEY_ID &&
-  process.env.AWS_SECRET_ACCESS_KEY
-)
+const isEmailConfigured = (): boolean =>
+  Boolean(env.awsRegion && env.awsAccessKeyId && env.awsSecretAccessKey)
 
-let sesClient
+let sesClient: SESv2Client | undefined
 /**
  * Lazily construct the SES client so the server can start without AWS
  * configuration (e.g. when only email sending is disabled).
- * @returns {SESv2Client}
+ * @returns the shared SES client
  */
-const getSesClient = () => {
+const getSesClient = (): SESv2Client => {
   if (!sesClient) {
-    sesClient = new SESv2Client({ region: process.env.AWS_REGION })
+    sesClient = new SESv2Client({ region: env.awsRegion })
   }
   return sesClient
 }
@@ -55,7 +66,7 @@ const router = express.Router()
 
 const upload = multer({
   dest: UPLOAD_DIR,
-  fileFilter: (req, file, cb) => {
+  fileFilter: (_req, file, cb) => {
     // The function should call `cb` with a boolean
     // to indicate if the file should be accepted
     cb(null, file.mimetype === 'application/pdf')
@@ -65,22 +76,46 @@ const upload = multer({
 /**
  * Create an Error carrying an HTTP status code so the global error handler
  * can respond with the appropriate status and message.
- * @param {number} status HTTP status code
- * @param {string} message error message
- * @returns {Error}
+ * @param status HTTP status code
+ * @param message error message
+ * @returns the error with status attached
  */
-const httpError = (status, message) => Object.assign(new Error(message), { status })
+const httpError = (status: number, message: string): HttpError =>
+  Object.assign(new Error(message), { status })
 
 /**
  * Resolve the path of the resized PDF on disk for a given upload uid.
- * @param {string} uid upload identifier assigned by multer
- * @returns {string} absolute path to the resized PDF
+ * @param uid upload identifier assigned by multer
+ * @returns absolute path to the resized PDF
  */
-const pdfPath = uid => path.join(UPLOAD_DIR, `${uid}.pdf`)
+const pdfPath = (uid: string): string => path.join(UPLOAD_DIR, `${uid}.pdf`)
 
-router.post('/upload', upload.single('pdf'), async (req, res) => {
+/**
+ * Narrow a Stripe/Lob metadata value to a known mailing type.
+ * @param value metadata value to check
+ * @returns true when the value is a valid mail type
+ */
+const isMailType = (value: string | undefined): value is MailType =>
+  value === 'noUpgrade' || value === 'registered' || value === 'certified'
+
+/**
+ * Read the `status_code` (Lob) property off an unknown thrown value.
+ * @param err caught value
+ * @returns the status code when present
+ */
+const statusCodeOf = (err: unknown): number | undefined => {
+  if (typeof err === 'object' && err !== null && 'status_code' in err) {
+    const code = (err as { status_code?: unknown }).status_code
+    return typeof code === 'number' ? code : undefined
+  }
+  return undefined
+}
+
+router.post('/upload', upload.single('pdf'), async (req: Request, res: Response) => {
   if (!req.file) {
-    return res.status(400).send({ error: 'That file doesn\'t look like a PDF. Please try again with a PDF document.' })
+    return res
+      .status(400)
+      .send({ error: "That file doesn't look like a PDF. Please try again with a PDF document." })
   }
   // PDF saved to filesystem, accessible via `req.file`
 
@@ -88,68 +123,86 @@ router.post('/upload', upload.single('pdf'), async (req, res) => {
   const numPages = await countPages(req.file.path)
 
   if (numPages > PAGE_LIMIT) {
-    return res.status(400).send({ error: `PDF over ${PAGE_LIMIT}-page limit. Please try again with a shorter document.` })
+    return res.status(400).send({
+      error: `PDF over ${PAGE_LIMIT}-page limit. Please try again with a shorter document.`
+    })
   }
 
   // Resize pages to 8.5" x 11" dimensions
   await resizePdf(req.file.path)
 
-  res.json({
+  const body: UploadResponse = {
     filename: req.file.originalname,
     uid: req.file.filename,
     url: uidToUrl(req.file.filename),
     numPages: numPages
-  })
+  }
+  res.json(body)
 })
 
-router.post('/verify_address', async (req, res) => {
+router.post('/verify_address', async (req: Request, res: Response) => {
+  const address: VerifyAddressRequest = req.body
+
   // call lob address verification api
   const verification = await LobLive.usVerifications.verify({
-    recipient: req.body.name,
-    primary_line: req.body.line1,
-    secondary_line: req.body.line2,
-    city: req.body.city,
-    state: req.body.state,
-    zip_code: req.body.zip
+    recipient: address.name,
+    primary_line: address.line1,
+    secondary_line: address.line2,
+    city: address.city,
+    state: address.state,
+    zip_code: address.zip
   })
 
   // the client treats `error === false` as a successful verification and
   // anything truthy as a message to display
   const deliverable = verification.deliverability === 'deliverable'
-  res.json({
+  const body: VerifyAddressResponse = {
     error: deliverable ? false : 'We could not verify this address. Please double-check it.',
     deliverability: verification.deliverability
-  })
+  }
+  res.json(body)
 })
 
-router.post('/checkout', async (req, res) => {
-  const demo = req.body.demo
-  const uid = req.body.uid
-  const numPages = req.body.numPages
-  const mailType = req.body.mailType
-  const returnEnvelope = req.body.returnEnvelope
-  const cost = req.body.cost
-  const fromAddress = req.body.fromAddress
-  const toAddress = req.body.toAddress
-  const email = req.body.email
+router.post('/checkout', async (req: Request, res: Response) => {
+  const {
+    demo,
+    uid,
+    numPages,
+    mailType,
+    returnEnvelope,
+    cost,
+    fromAddress,
+    toAddress,
+    email
+  }: CheckoutRequest = req.body
 
-  if (!(uid && numPages && mailType && cost && fromAddress && toAddress && email) ||
-    typeof returnEnvelope !== 'boolean' || typeof demo !== 'boolean') {
-    return res.status(400).send({ error: 'Missing at least one of the following required parameters in the request body: "uid", "numPages", "mailType", "returnEnvelope", "cost", "fromAddress", "toAddress", "email".' })
+  if (
+    !(uid && numPages && mailType && cost && fromAddress && toAddress && email) ||
+    typeof returnEnvelope !== 'boolean' ||
+    typeof demo !== 'boolean'
+  ) {
+    return res.status(400).send({
+      error:
+        'Missing at least one of the following required parameters in the request body: "uid", "numPages", "mailType", "returnEnvelope", "cost", "fromAddress", "toAddress", "email".'
+    })
   }
 
   // IMPORTANT: use the correct live or demo API keys depending on `demo`
   // request parameter
   const stripe = demo ? stripeTest : stripeLive
 
-  if (!(mailType === 'noUpgrade' || mailType === 'registered' || mailType === 'certified')) {
-    return res.status(400).send({ error: `Invalid mail type "${mailType}" specified. Valid options are "noUpgrade", "registered", and "certified".` })
+  if (!isMailType(mailType)) {
+    return res.status(400).send({
+      error: `Invalid mail type "${mailType}" specified. Valid options are "noUpgrade", "registered", and "certified".`
+    })
   }
 
   // count pages to ensure number matches req.body.numPages; abort with 400 otherwise
   const numPagesOnDisk = await countPages(pdfPath(uid))
   if (numPages !== numPagesOnDisk) {
-    return res.status(400).send({ error: `Number of PDF pages used for price calculation (${numPages}) does not equal number of PDF pages of uploaded file (${numPagesOnDisk}).` })
+    return res.status(400).send({
+      error: `Number of PDF pages used for price calculation (${numPages}) does not equal number of PDF pages of uploaded file (${numPagesOnDisk}).`
+    })
   }
 
   // CRITICAL: ensure the charge the user has authorized on the frontend
@@ -157,7 +210,9 @@ router.post('/checkout', async (req, res) => {
   // the cost we calculate server-side.
   const calculatedCost = calculateCost({ numPages, mailType, returnEnvelope })
   if (cost !== calculatedCost) {
-    return res.status(400).send({ error: `Price total authorized (${cost}) does not equal the calculated cost (${calculatedCost}). Transaction aborted. Your card has not been charged.` })
+    return res.status(400).send({
+      error: `Price total authorized (${cost}) does not equal the calculated cost (${calculatedCost}). Transaction aborted. Your card has not been charged.`
+    })
   }
 
   const description = buildDescription({ numPages, toAddress, returnEnvelope, mailType })
@@ -202,18 +257,21 @@ router.post('/checkout', async (req, res) => {
     description: description
   })
 
-  res.json({
+  const body: CheckoutResponse = {
     clientSecret: paymentIntent.client_secret,
     paymentIntentId: paymentIntent.id
-  })
+  }
+  res.json(body)
 })
 
-router.post('/finalize', async (req, res) => {
-  const demo = req.body.demo
-  const paymentIntentId = req.body.paymentIntentId
+router.post('/finalize', async (req: Request, res: Response) => {
+  const { demo, paymentIntentId }: FinalizeRequest = req.body
 
   if (!paymentIntentId || typeof demo !== 'boolean') {
-    return res.status(400).send({ error: 'Missing at least one of the following required parameters in the request body: "paymentIntentId", "demo".' })
+    return res.status(400).send({
+      error:
+        'Missing at least one of the following required parameters in the request body: "paymentIntentId", "demo".'
+    })
   }
 
   // IMPORTANT: use the correct live or demo API keys depending on `demo`
@@ -225,62 +283,73 @@ router.post('/finalize', async (req, res) => {
 
   // the card must be authorized (but not yet captured) before we mail anything
   if (paymentIntent.status !== 'requires_capture') {
-    return res.status(400).send({ error: `Payment is not ready to be captured (status: "${paymentIntent.status}"). Your card has not been charged.` })
+    return res.status(400).send({
+      error: `Payment is not ready to be captured (status: "${paymentIntent.status}"). Your card has not been charged.`
+    })
   }
 
   // all order details were stored in the PaymentIntent metadata by /checkout,
   // which is authoritative because the client cannot modify it
   const metadata = paymentIntent.metadata
-  const uid = metadata.uid
-  const numPages = parseInt(metadata.numPages, 10)
-  const mailType = metadata.mailType
+  const uid = metadata.uid ?? ''
+  const numPages = parseInt(metadata.numPages ?? '', 10)
+  const rawMailType = metadata.mailType
   const returnEnvelope = metadata.returnEnvelope === 'true'
-  const email = metadata.email
+  const email = metadata.email ?? ''
+
+  if (!isMailType(rawMailType)) {
+    return res.status(400).send({
+      error: `Invalid mail type "${rawMailType}" stored on the payment. Transaction aborted. Your card has not been charged.`
+    })
+  }
+  const mailType: MailType = rawMailType
 
   // count pages to ensure number matches the amount authorized; abort with 400 otherwise
   const numPagesOnDisk = await countPages(pdfPath(uid))
   if (numPages !== numPagesOnDisk) {
-    return res.status(400).send({ error: `Number of PDF pages used for price calculation (${numPages}) does not equal number of PDF pages of uploaded file (${numPagesOnDisk}).` })
+    return res.status(400).send({
+      error: `Number of PDF pages used for price calculation (${numPages}) does not equal number of PDF pages of uploaded file (${numPagesOnDisk}).`
+    })
   }
 
   // CRITICAL: ensure the amount the user has authorized matches the cost we
   // calculate server-side.
   const calculatedCost = calculateCost({ numPages, mailType, returnEnvelope })
   if (paymentIntent.amount !== calculatedCost) {
-    return res.status(400).send({ error: `Price total authorized (${paymentIntent.amount}) does not equal the calculated cost (${calculatedCost}). Transaction aborted. Your card has not been charged.` })
+    return res.status(400).send({
+      error: `Price total authorized (${paymentIntent.amount}) does not equal the calculated cost (${calculatedCost}). Transaction aborted. Your card has not been charged.`
+    })
   }
 
-  let extraService
+  let extraService: 'registered' | 'certified' | false
   if (mailType === 'registered') {
     extraService = 'registered'
-  }
-  else if (mailType === 'certified') {
+  } else if (mailType === 'certified') {
     extraService = 'certified'
-  }
-  else {
+  } else {
     extraService = false // otherwise type is "noUpgrade"
   }
 
-  const fromAddress = {
-    name: metadata.from_name,
-    line1: metadata.from_line1,
-    line2: metadata.from_line2,
-    city: metadata.from_city,
-    state: metadata.from_state,
-    zip: metadata.from_zip
+  const fromAddress: Address = {
+    name: metadata.from_name ?? '',
+    line1: metadata.from_line1 ?? '',
+    line2: metadata.from_line2 ?? '',
+    city: metadata.from_city ?? '',
+    state: metadata.from_state ?? '',
+    zip: metadata.from_zip ?? ''
   }
-  const toAddress = {
-    name: metadata.to_name,
-    line1: metadata.to_line1,
-    line2: metadata.to_line2,
-    city: metadata.to_city,
-    state: metadata.to_state,
-    zip: metadata.to_zip
+  const toAddress: Address = {
+    name: metadata.to_name ?? '',
+    line1: metadata.to_line1 ?? '',
+    line2: metadata.to_line2 ?? '',
+    city: metadata.to_city ?? '',
+    state: metadata.to_state ?? '',
+    zip: metadata.to_zip ?? ''
   }
 
   // call lob api to send letter
   // https://lob.com/docs#letters_create
-  const letterOptions = {
+  const letterOptions: LobLetterCreateOptions = {
     from: {
       name: fromAddress.name || '',
       address_line1: fromAddress.line1 || '',
@@ -288,7 +357,7 @@ router.post('/finalize', async (req, res) => {
       address_city: fromAddress.city || '',
       address_state: fromAddress.state || '',
       address_zip: fromAddress.zip || '',
-      address_country: 'US',
+      address_country: 'US'
     },
     to: {
       name: toAddress.name || '',
@@ -297,7 +366,7 @@ router.post('/finalize', async (req, res) => {
       address_city: toAddress.city || '',
       address_state: toAddress.state || '',
       address_zip: toAddress.zip || '',
-      address_country: 'US',
+      address_country: 'US'
     },
     file: await fs.promises.readFile(pdfPath(uid)),
     color: false,
@@ -321,19 +390,26 @@ router.post('/finalize', async (req, res) => {
     letterOptions.extra_service = extraService
   }
 
-  let lobRes
+  let lobRes: LobLetter
   try {
     lobRes = await lob.letters.create(letterOptions)
-  }
-  catch (err) {
+  } catch (err) {
     console.error('error creating lob letter', err)
-    if (err.status_code === 422) { // bad request
-      await emailAdmin('[MailAPDF.Online] Error creating Lob letter (bad request)', serializeError(err))
-      return res.status(400).send({ error: `Error mailing PDF. ${err.message} Your card has not been charged.` })
-    }
-    else {
+    if (statusCodeOf(err) === 422) {
+      // bad request
+      await emailAdmin(
+        '[MailAPDF.Online] Error creating Lob letter (bad request)',
+        serializeError(err)
+      )
+      return res.status(400).send({
+        error: `Error mailing PDF. ${errorMessageOf(err)} Your card has not been charged.`
+      })
+    } else {
       await emailAdmin('[MailAPDF.Online] Error creating Lob letter', serializeError(err))
-      return res.status(500).send({ error: 'Internal error mailing your document. Your card has not been charged, and your document has not been sent. An administrator has been notified.' })
+      return res.status(500).send({
+        error:
+          'Internal error mailing your document. Your card has not been charged, and your document has not been sent. An administrator has been notified.'
+      })
     }
   }
 
@@ -341,15 +417,19 @@ router.post('/finalize', async (req, res) => {
   let charge
   try {
     charge = await stripe.paymentIntents.capture(paymentIntent.id)
-  }
-  catch (err) {
+  } catch (err) {
     // WARNING, BAD THINGS ARE HAPPENING: we were charged for
     // using the Lob API but were unable to capture a charge from
     // the user. This could be a programming error or a malicious
     // user.
     console.error('ERROR CAPTURING CHARGE FROM CUSTOMER', err)
-    await emailAdmin('[MailAPDF.Online] WARNING IMMEDIATE ACTION REQUIRED: Error capturing charge from customer', serializeError(err))
-    return res.status(500).send({ error: 'Error charging your credit card. An administrator has been notified.' })
+    await emailAdmin(
+      '[MailAPDF.Online] WARNING IMMEDIATE ACTION REQUIRED: Error capturing charge from customer',
+      serializeError(err)
+    )
+    return res
+      .status(500)
+      .send({ error: 'Error charging your credit card. An administrator has been notified.' })
   }
 
   // it is finished!
@@ -358,21 +438,20 @@ router.post('/finalize', async (req, res) => {
   res.status(204).send()
   // email user with tracking link or number
   if (extraService) {
-    await emailTracking(email, toAddress.line1, lobRes.tracking_number, true)
-  }
-  else {
+    await emailTracking(email, toAddress.line1, lobRes.tracking_number ?? '', true)
+  } else {
     await emailTracking(email, toAddress.line1, lobRes.id, false)
   }
 })
 
-router.get('/track/:trackingNumber', async (req, res) => {
-  let letter
+router.get('/track/:trackingNumber', async (req: Request, res: Response) => {
+  const trackingNumber = String(req.params.trackingNumber)
+  let letter: LobLetter
   try {
-    letter = await LobLive.letters.retrieve(req.params.trackingNumber)
-  }
-  catch (err) {
-    if (err.status_code === 404) {
-      return res.render('tracking.mustache', { notFound: true, id: req.params.trackingNumber })
+    letter = await LobLive.letters.retrieve(trackingNumber)
+  } catch (err) {
+    if (statusCodeOf(err) === 404) {
+      return res.render('tracking.mustache', { notFound: true, id: trackingNumber })
     }
     throw err
   }
@@ -410,10 +489,12 @@ router.get('/track/:trackingNumber', async (req, res) => {
     letter.expected_delivery_date = formatDate(letter.expected_delivery_date)
   }
   letter.tracking_events = (letter.tracking_events || [])
-    .sort((a, b) => new Date(b.time) - new Date(a.time)) // most recent first
+    .sort((a, b) => new Date(b.time ?? '').getTime() - new Date(a.time ?? '').getTime()) // most recent first
     .map(event => {
-      event.time = formatDate(event.time, { includeTime: true })
-      const location = zipcodes.lookup(event.location)
+      if (event.time) {
+        event.time = formatDate(event.time, { includeTime: true })
+      }
+      const location = event.location ? zipcodes.lookup(event.location) : undefined
       event.location = location ? [location.city, location.state].join(', ') : event.location
       return event
     })
@@ -422,13 +503,13 @@ router.get('/track/:trackingNumber', async (req, res) => {
 
 /**
  * Count the number of pages in a PDF using Ghostscript.
- * @param {string} pdf path to the PDF file
- * @returns {Promise<number>} number of pages
+ * @param pdf path to the PDF file
+ * @returns number of pages
  */
-async function countPages(pdf) {
-  let stdout
+async function countPages(pdf: string): Promise<number> {
+  let stdout: string
   try {
-    ({ stdout } = await execFileAsync('gs', [
+    ;({ stdout } = await execFileAsync('gs', [
       '-q',
       '-dNODISPLAY',
       // Ghostscript 9.50+ enables SAFER by default, which blocks the
@@ -438,16 +519,21 @@ async function countPages(pdf) {
       '-c',
       `(${pdf}) (r) file runpdfbegin pdfpagecount = quit`
     ]))
-  }
-  catch (err) {
-    console.error(err, err.stderr)
-    throw httpError(400, 'Unable to process PDF. Please check that you have uploaded a valid PDF document.')
+  } catch (err) {
+    console.error(err, stderrOf(err))
+    throw httpError(
+      400,
+      'Unable to process PDF. Please check that you have uploaded a valid PDF document.'
+    )
   }
   // split by newlines, filter out empty lines
-  const stdoutLines = stdout.split('\n').filter(line => { return line.length })
+  const stdoutLines = stdout.split('\n').filter(line => {
+    return line.length
+  })
   // ghostscript will sometimes print warnings on previous lines that we
   // can't seem to suppress
-  const numPages = parseInt(stdoutLines[stdoutLines.length - 1])
+  const lastLine = stdoutLines[stdoutLines.length - 1] ?? ''
+  const numPages = parseInt(lastLine)
   if (isNaN(numPages)) {
     await emailAdmin('[MailAPDF.Online] Error parsing Ghostscript output', stdout)
     throw httpError(500, 'Internal server error.')
@@ -469,10 +555,9 @@ async function countPages(pdf) {
  * particularly scanned ones (cf. #2).
  * Uploaded PDF is a random filename assigned by multer; resized PDF has
  * the same filename prefix but with '.pdf' appended.
- * @param {string} pdf path to the PDF file
- * @returns {Promise<void>}
+ * @param pdf path to the PDF file
  */
-async function resizePdf(pdf) {
+async function resizePdf(pdf: string): Promise<void> {
   try {
     await execFileAsync('gs', [
       '-q',
@@ -489,27 +574,38 @@ async function resizePdf(pdf) {
       '-f',
       pdf
     ])
-  }
-  catch (err) {
-    console.error(err, err.stderr)
-    throw httpError(400, 'Unable to process PDF. Please check that you have uploaded a valid PDF document.')
+  } catch (err) {
+    console.error(err, stderrOf(err))
+    throw httpError(
+      400,
+      'Unable to process PDF. Please check that you have uploaded a valid PDF document.'
+    )
   }
 }
 
 /**
  * Build a human-readable Stripe charge description for an order.
- * @param {{numPages: number, toAddress: object, returnEnvelope: boolean, mailType: string}} order
- * @returns {string}
+ * @param order order details to describe
+ * @returns the charge description
  */
-function buildDescription({ numPages, toAddress, returnEnvelope, mailType }) {
+function buildDescription({
+  numPages,
+  toAddress,
+  returnEnvelope,
+  mailType
+}: {
+  numPages: number
+  toAddress: Address
+  returnEnvelope: boolean
+  mailType: MailType
+}): string {
   let description = `Mailing a ${numPages}-page PDF to ${toAddress.line1}`
   if (returnEnvelope) {
     description += ' with a return envelope'
   }
   if (mailType === 'registered') {
     description += ' via registered mail'
-  }
-  else if (mailType === 'certified') {
+  } else if (mailType === 'certified') {
     description += ' via certified mail'
   }
   return description
@@ -517,72 +613,117 @@ function buildDescription({ numPages, toAddress, returnEnvelope, mailType }) {
 
 /**
  * Resolve the public URL for a processed upload.
- * @param {string} uid upload identifier assigned by multer
- * @returns {string} URL path
+ * @param uid upload identifier assigned by multer
+ * @returns URL path
  */
-function uidToUrl(uid) {
+function uidToUrl(uid: string): string {
   return `/uploads/${uid}.pdf`
 }
 
 /**
  * Format a date (or date string) like "Monday, January 1st", optionally
  * prefixed with the time like "3:45 PM Monday, January 1st".
- * @param {Date|string} date value to format
- * @param {{includeTime?: boolean}} [options]
- * @returns {string}
+ * @param date value to format
+ * @param options set `includeTime` to prefix the time
+ * @returns the formatted date
  */
-function formatDate(date, { includeTime = false } = {}) {
+function formatDate(
+  date: Date | string,
+  { includeTime = false }: { includeTime?: boolean } = {}
+): string {
   const parsed = new Date(date)
-  const datePart = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long' }).format(parsed)
+  const datePart = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long' }).format(
+    parsed
+  )
   const day = parsed.getDate()
   const formatted = `${datePart} ${day}${ordinalSuffix(day)}`
   if (!includeTime) {
     return formatted
   }
-  const timePart = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(parsed)
+  const timePart = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(
+    parsed
+  )
   return `${timePart} ${formatted}`
 }
 
 /**
  * Get the English ordinal suffix for a number (1 -> "st", 2 -> "nd", etc.).
- * @param {number} n
- * @returns {string}
+ * @param n the number to suffix
+ * @returns the ordinal suffix
  */
-function ordinalSuffix(n) {
-  const suffixes = ['th', 'st', 'nd', 'rd']
+function ordinalSuffix(n: number): string {
+  const suffixes: readonly string[] = ['th', 'st', 'nd', 'rd']
   const value = n % 100
-  return suffixes[(value - 20) % 10] || suffixes[value] || suffixes[0]
+  return suffixes[(value - 20) % 10] ?? suffixes[value] ?? suffixes[0] ?? 'th'
+}
+
+/** Extra fields present on errors thrown by the Lob and Stripe SDKs. */
+interface SdkErrorFields {
+  status_code?: number
+  statusCode?: number
+  code?: string
+  type?: string
+  requestId?: string
+  stderr?: string
+  message?: string
+  _response?: { status?: number; statusText?: string; data?: unknown }
+  response?: { status?: number; statusText?: string; data?: unknown }
+}
+
+/**
+ * Read a human-readable message off an unknown thrown value.
+ * @param err caught value
+ * @returns the error message, if any
+ */
+function errorMessageOf(err: unknown): string {
+  if (err instanceof Error) {
+    return err.message
+  }
+  return String(err)
+}
+
+/**
+ * Read the `stderr` property off an unknown thrown value.
+ * @param err caught value
+ * @returns the stderr output, if any
+ */
+function stderrOf(err: unknown): string | undefined {
+  if (typeof err === 'object' && err !== null && 'stderr' in err) {
+    const stderr = (err as SdkErrorFields).stderr
+    return typeof stderr === 'string' ? stderr : undefined
+  }
+  return undefined
 }
 
 /**
  * Serialize an error for logging or emailing. Error objects returned by SDKs
  * like Lob and Stripe contain circular references (request/response sockets),
  * so a plain `JSON.stringify` throws. Extract only the useful fields instead.
- * @param {unknown} err error to serialize
- * @returns {string} pretty-printed JSON representation of the error
+ * @param err error to serialize
+ * @returns pretty-printed JSON representation of the error
  */
-function serializeError(err) {
+function serializeError(err: unknown): string {
   if (!(err instanceof Error)) {
     try {
       return JSON.stringify(err, null, 2)
-    }
-    catch {
+    } catch {
       return String(err)
     }
   }
 
-  const details = {
+  const sdkErr: SdkErrorFields = err
+  const details: Record<string, unknown> = {
     name: err.name,
     message: err.message,
     stack: err.stack,
-    status_code: err.status_code,
-    statusCode: err.statusCode,
-    code: err.code,
-    type: err.type,
-    requestId: err.requestId
+    status_code: sdkErr.status_code,
+    statusCode: sdkErr.statusCode,
+    code: sdkErr.code,
+    type: sdkErr.type,
+    requestId: sdkErr.requestId
   }
 
-  const response = err._response ?? err.response
+  const response = sdkErr._response ?? sdkErr.response
   if (response) {
     details.response = {
       status: response.status,
@@ -591,61 +732,74 @@ function serializeError(err) {
     }
   }
 
-  return JSON.stringify(details, (key, value) => {
-    if (typeof value === 'bigint') {
-      return value.toString()
-    }
-    return value
-  }, 2)
+  return JSON.stringify(
+    details,
+    (_key, value) => {
+      if (typeof value === 'bigint') {
+        return value.toString()
+      }
+      return value
+    },
+    2
+  )
 }
 
 /**
  * Email an administrator. Errors are logged rather than thrown so callers can
  * continue responding to the user.
- * @param {string} subject email subject
- * @param {string} body email body
- * @returns {Promise<void>}
+ * @param subject email subject
+ * @param body email body
  */
-async function emailAdmin(subject, body) {
-  if (!isEmailConfigured()) {
+async function emailAdmin(subject: string, body: string): Promise<void> {
+  if (!isEmailConfigured() || !env.adminEmail) {
     console.error('AWS SES is not configured; skipping admin email:', subject)
     return
   }
 
   try {
-    await getSesClient().send(new SendEmailCommand({
-      FromEmailAddress: 'admin_alerts@mailpdf.online',
-      Destination: {
-        ToAddresses: [process.env.ADMIN_EMAIL]
-      },
-      Content: {
-        Simple: {
-          Subject: { Data: subject, Charset: 'UTF-8' },
-          Body: {
-            Text: { Data: body, Charset: 'UTF-8' }
+    await getSesClient().send(
+      new SendEmailCommand({
+        FromEmailAddress: 'admin_alerts@mailpdf.online',
+        Destination: {
+          ToAddresses: [env.adminEmail]
+        },
+        Content: {
+          Simple: {
+            Subject: { Data: subject, Charset: 'UTF-8' },
+            Body: {
+              Text: { Data: body, Charset: 'UTF-8' }
+            }
           }
         }
-      }
-    }))
-  }
-  catch (err) {
+      })
+    )
+  } catch (err) {
     console.error(err)
   }
 }
 
 /**
  * Email a customer their tracking information.
- * @param {string} email recipient email address
- * @param {string} toLine1 first line of the destination address
- * @param {string} trackingNumber Lob letter id or USPS tracking number
- * @param {boolean} uspsTracking whether the tracking number is a USPS number
- * @returns {Promise<void>}
+ * @param email recipient email address
+ * @param toLine1 first line of the destination address
+ * @param trackingNumber Lob letter id or USPS tracking number
+ * @param uspsTracking whether the tracking number is a USPS number
  */
-async function emailTracking(email, toLine1, trackingNumber, uspsTracking) {
+async function emailTracking(
+  email: string,
+  toLine1: string,
+  trackingNumber: string,
+  uspsTracking: boolean
+): Promise<void> {
   const trackUrl = uspsTracking
     ? `https://tools.usps.com/go/TrackConfirmAction?qtc_tLabels1=${trackingNumber}`
     : `https://mailpdf.online/track/${trackingNumber}`
-  const { subject, text, html } = buildTrackingEmail({ toLine1, trackingNumber, trackUrl, uspsTracking })
+  const { subject, text, html } = buildTrackingEmail({
+    toLine1,
+    trackingNumber,
+    trackUrl,
+    uspsTracking
+  })
 
   if (!isEmailConfigured()) {
     console.error('AWS SES is not configured; skipping tracking email to', email)
@@ -653,23 +807,24 @@ async function emailTracking(email, toLine1, trackingNumber, uspsTracking) {
   }
 
   try {
-    await getSesClient().send(new SendEmailCommand({
-      FromEmailAddress: 'order@mailpdf.online',
-      Destination: {
-        ToAddresses: [email]
-      },
-      Content: {
-        Simple: {
-          Subject: { Data: subject, Charset: 'UTF-8' },
-          Body: {
-            Text: { Data: text, Charset: 'UTF-8' },
-            Html: { Data: html, Charset: 'UTF-8' }
+    await getSesClient().send(
+      new SendEmailCommand({
+        FromEmailAddress: 'order@mailpdf.online',
+        Destination: {
+          ToAddresses: [email]
+        },
+        Content: {
+          Simple: {
+            Subject: { Data: subject, Charset: 'UTF-8' },
+            Body: {
+              Text: { Data: text, Charset: 'UTF-8' },
+              Html: { Data: html, Charset: 'UTF-8' }
+            }
           }
         }
-      }
-    }))
-  }
-  catch (err) {
+      })
+    )
+  } catch (err) {
     console.error(err)
   }
 }

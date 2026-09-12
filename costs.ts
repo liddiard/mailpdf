@@ -1,8 +1,10 @@
+import type { CalculateCostParams, Costs } from './types.ts'
+
 /**
  * Pricing configuration shared by the client and server.
  * All costs are in cents.
  */
-export const costs = {
+export const costs: Costs = {
   base: 199,
   maxFreePages: 5,
   overMaxFreePages: 149,
@@ -15,10 +17,14 @@ export const costs = {
 
 /**
  * Calculate the total cost in cents for a mailing order.
- * @param {{numPages: number, mailType: string, returnEnvelope: boolean}} options
- * @returns {number} total cost in cents
+ * @param options order details used for pricing
+ * @returns total cost in cents
  */
-export const calculateCost = ({ numPages, mailType, returnEnvelope }) => {
+export const calculateCost = ({
+  numPages,
+  mailType,
+  returnEnvelope
+}: CalculateCostParams): number => {
   let total = costs.base
   if (numPages > costs.maxFreePages) {
     total += costs.overMaxFreePages
