@@ -626,8 +626,8 @@ function uidToUrl(uid: string): string {
 }
 
 /**
- * Format a date (or date string) like "Monday, January 1st", optionally
- * prefixed with the time like "3:45 PM Monday, January 1st".
+ * Format a date (or date string) like "Monday, January 1", optionally
+ * prefixed with the time like "3:45 PM Monday, January 1".
  * @param date value to format
  * @param options set `includeTime` to prefix the time
  * @returns the formatted date
@@ -637,11 +637,11 @@ function formatDate(
   { includeTime = false }: { includeTime?: boolean } = {}
 ): string {
   const parsed = new Date(date)
-  const datePart = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long' }).format(
-    parsed
-  )
-  const day = parsed.getDate()
-  const formatted = `${datePart} ${day}${ordinalSuffix(day)}`
+  const formatted = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric'
+  }).format(parsed)
   if (!includeTime) {
     return formatted
   }
@@ -649,17 +649,6 @@ function formatDate(
     parsed
   )
   return `${timePart} ${formatted}`
-}
-
-/**
- * Get the English ordinal suffix for a number (1 -> "st", 2 -> "nd", etc.).
- * @param n the number to suffix
- * @returns the ordinal suffix
- */
-function ordinalSuffix(n: number): string {
-  const suffixes: readonly string[] = ['th', 'st', 'nd', 'rd']
-  const value = n % 100
-  return suffixes[(value - 20) % 10] ?? suffixes[value] ?? suffixes[0] ?? 'th'
 }
 
 /** Extra fields present on errors thrown by the Lob and Stripe SDKs. */
