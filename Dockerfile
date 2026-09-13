@@ -38,7 +38,7 @@ RUN npm ci --omit=dev --ignore-scripts
 # The server runs TypeScript directly via Node's native type stripping, so the
 # .ts sources ship as-is and there is no server build step. The SPA is served
 # from the Vite build output in dist/ and templates from views/.
-COPY --chown=node:node app.ts env.ts costs.ts emails.ts types.ts ./
+COPY --chown=node:node app.ts env.ts costs.ts emails.ts lib.ts types.ts ./
 COPY --chown=node:node bin ./bin
 COPY --chown=node:node routes ./routes
 COPY --chown=node:node types ./types
