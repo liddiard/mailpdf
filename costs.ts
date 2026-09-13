@@ -7,11 +7,11 @@ import type { CalculateCostParams, Costs } from './types.ts'
 export const costs: Costs = {
   base: 199,
   maxFreePages: 5,
-  overMaxFreePages: 149,
+  overMaxFreePages: 199,
   overMaxFreePagesPerPage: 15,
   maxPages: 60,
-  certifiedMail: 499,
-  registeredMail: 1650,
+  certifiedMail: 749,
+  registeredMail: 2499,
   returnEnvelope: 49
 }
 
