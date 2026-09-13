@@ -193,25 +193,28 @@ footer {
   }
 }
 
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1em;
-  background-color: rgb(0 0 0 / 0.7);
-  z-index: 1000;
+/* lock background scrolling while any native modal dialog is open */
+html:has(dialog[open]) {
+  overflow: hidden;
 }
 
 .modal-dialog {
   width: 100%;
   max-width: 32rem;
+  max-height: calc(100vh - 2em);
+  max-height: calc(100dvh - 2em);
   padding: 1em 2em;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   color: black;
   background-color: white;
+  border: none;
   border-radius: 0.25em;
   text-shadow: none;
+}
+
+.modal-dialog::backdrop {
+  background-color: rgb(0 0 0 / 0.7);
 }
 
 .email.modal {

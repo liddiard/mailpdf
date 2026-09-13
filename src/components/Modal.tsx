@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 
 /** Props for the modal dialog. */
@@ -9,32 +9,77 @@ interface ModalProps {
 }
 
 /**
- * A minimal accessible modal dialog. Renders a dimmed backdrop with a
- * centered dialog, and closes on backdrop click or the Escape key.
+ * A minimal accessible modal dialog built on the native `<dialog>` element.
+ * Opening it renders the dialog in the browser's top layer (dimmed via
+ * `::backdrop`) and locks background scrolling, while the dialog's own
+ * contents scroll when they exceed the viewport height. It closes on backdrop
+ * click or the Escape key when an `onClose` handler is provided.
  */
 const Modal = ({ children, onClose, className = '' }: ModalProps) => {
-  // close the modal when the user presses Escape
+  const dialogRef = useRef<HTMLDialogElement>(null)
+
+  // open the dialog in the top layer once it mounts
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && onClose) {
-        onClose()
+    const dialog = dialogRef.current
+    if (!dialog) {
+      return
+    }
+    if (!dialog.open) {
+      dialog.showModal()
+    }
+    return () => {
+      if (dialog.open) {
+        dialog.close()
       }
     }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  // dismiss on Escape (cancel) or a click on the backdrop
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog) {
+      return
+    }
+
+    const handleCancel = (event: Event) => {
+      event.preventDefault()
+      onClose?.()
+    }
+
+    const handleClick = (event: MouseEvent) => {
+      // only the dialog element itself (its padding or the backdrop) can be the
+      // click target; clicks on the content bubble up from descendants
+      if (event.target !== dialog) {
+        return
+      }
+      // keyboard-activated clicks (e.g. pressing Enter on a form control) report
+      // (0, 0) coordinates and would otherwise look like an outside click
+      if (event.detail === 0) {
+        return
+      }
+      const rect = dialog.getBoundingClientRect()
+      const isInside =
+        event.clientX >= rect.left &&
+        event.clientX <= rect.right &&
+        event.clientY >= rect.top &&
+        event.clientY <= rect.bottom
+      if (!isInside) {
+        onClose?.()
+      }
+    }
+
+    dialog.addEventListener('cancel', handleCancel)
+    dialog.addEventListener('click', handleClick)
+    return () => {
+      dialog.removeEventListener('cancel', handleCancel)
+      dialog.removeEventListener('click', handleClick)
+    }
   }, [onClose])
 
   return (
-    <div className="modal-backdrop" onClick={onClose} role="presentation">
-      <div
-        className={`modal-dialog ${className}`}
-        role="dialog"
-        aria-modal="true"
-        onClick={event => event.stopPropagation()}
-      >
-        {children}
-      </div>
-    </div>
+    <dialog ref={dialogRef} className={`modal-dialog ${className}`}>
+      {children}
+    </dialog>
   )
 }
 
