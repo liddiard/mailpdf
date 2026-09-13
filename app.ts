@@ -23,6 +23,12 @@ app.set('view engine', 'mustache')
 app.set('views', path.join(__dirname, 'views'))
 
 app.disable('x-powered-by') // we don't need the x-powered-by express header
+
+// In production the app runs behind nginx, which sets X-Forwarded-For. Trust
+// the first proxy hop so rate limiting (and logging) see real client IPs.
+if (env.nodeEnv === 'production') {
+  app.set('trust proxy', 1)
+}
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'))
@@ -39,6 +45,11 @@ fs.mkdirSync(UPLOAD_DIR, { recursive: true })
 // serve the built client (Vite output) and the uploaded PDFs
 app.use(express.static(path.join(__dirname, 'dist')))
 app.use('/uploads', express.static(UPLOAD_DIR))
+
+// lightweight liveness probe for the container orchestrator
+app.get('/healthz', (_req: Request, res: Response) => {
+  res.json({ status: 'ok' })
+})
 
 app.use('/', api)
 
