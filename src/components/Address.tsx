@@ -46,7 +46,6 @@ const Address = ({ fileUploadHasBegun, from, fields, updateAddress }: AddressPro
   }
 
   const className = `address ${title} ${error ? 'error' : ''}`
-  const arrow = <i className={`fa fa-arrow-right ${title}`} aria-hidden="true" />
 
   let nameClassName: string | undefined
   let line1ClassName: string | undefined
@@ -67,7 +66,7 @@ const Address = ({ fileUploadHasBegun, from, fields, updateAddress }: AddressPro
   return (
     <form className={className}>
       <h2>
-        {title} {arrow} {verificationStatus}
+        {title}: {verificationStatus}
       </h2>
       {error}
       <input

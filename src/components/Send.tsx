@@ -363,7 +363,7 @@ const Send = ({
             onChange={handleReturnEnvelopeChange}
             tabIndex={5}
           />
-          Include blank return envelope{' '}
+          Include return envelope{' '}
           <span className="price">+{formatMoney(costs.returnEnvelope)}</span>
         </label>
       </div>

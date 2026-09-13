@@ -2,12 +2,13 @@
 :root {
   --primary: oklch(0.3169 0.0952 256.22);
   --secondary: oklch(0.6721 0.2633 146.11);
-  --error: oklch(0.85 0.25 30.2);
+  --error-light: oklch(0.9 0.25 30.2);
+  --error-dark: oklch(0.4 0.25 30.2);
   --offline: oklch(84.2% 0.161 82);
   --disabled: oklch(84.5% 0 0);
   --envelope-bg: oklch(98.5% 0.014 93);
   --text-shadow: 0 0 5px rgb(0 0 0 / 0.25);
-  --placeholder-color: rgb(0 0 0 / 0.25);
+  --placeholder-color: rgb(0 0 0 / 0.5);
 }
 
 ::placeholder {
@@ -78,7 +79,7 @@ button {
     background-color: var(--disabled);
     border-top-color: var(--disabled);
     border-bottom-color: color-mix(in oklab, var(--disabled), black 10%);
-    cursor: default;
+    cursor: not-allowed;
   }
 }
 
@@ -96,10 +97,10 @@ input[type='email'] {
   transition: 1s border-color;
 
   &.error {
-    border-bottom-color: var(--error);
+    border-bottom-color: var(--error-dark);
 
     &::placeholder {
-      color: color-mix(in oklab, var(--error), transparent 50%);
+      color: color-mix(in oklab, var(--error-dark), transparent 50%);
     }
   }
 }
@@ -116,6 +117,7 @@ header {
 
   .pricing-details {
     margin: 0.5em 0;
+    font-style: italic;
   }
 
   .upload {
@@ -148,7 +150,7 @@ header {
 
     &.complete_error {
       font-weight: bold;
-      color: var(--error);
+      color: var(--error-light);
     }
   }
 }
@@ -273,7 +275,7 @@ body.dz-drag-hover #drop-mask {
 }
 
 #envelope {
-  color: gray;
+  color: black;
   text-shadow: none;
   background-color: var(--envelope-bg);
   padding: 1em 2em 3em;
@@ -301,7 +303,8 @@ body.dz-drag-hover #drop-mask {
     }
 
     &.error {
-      border-color: var(--error);
+      border-color: var(--error-dark);
+      font-weight: 500;
     }
 
     & + .address {
@@ -310,26 +313,8 @@ body.dz-drag-hover #drop-mask {
 
     h2 {
       text-transform: capitalize;
-      margin: 0;
+      margin: 0 0 0.5em;
       cursor: default;
-
-      .fa {
-        opacity: 0.3;
-      }
-
-      .fa-arrow-right {
-        --arrow-border: 0.23em solid;
-        margin-left: 0.25em;
-
-        &.from {
-          border-left: var(--arrow-border);
-        }
-
-        &.to {
-          border-right: var(--arrow-border);
-          letter-spacing: -0.05em;
-        }
-      }
 
       .verification-status {
         margin: 0 0.25em;
@@ -340,7 +325,7 @@ body.dz-drag-hover #drop-mask {
       }
 
       .fa-times {
-        color: var(--error);
+        color: var(--error-dark);
       }
     }
 
@@ -369,7 +354,7 @@ body.dz-drag-hover #drop-mask {
     }
 
     p.error {
-      color: var(--error);
+      color: var(--error-dark);
       line-height: 1.3;
       margin: 0.5em 0;
     }
@@ -456,6 +441,7 @@ body.dz-drag-hover #drop-mask {
 
   .error {
     font-weight: bold;
+    color: var(--error-light);
   }
 }
 
