@@ -806,7 +806,7 @@ async function emailTracking(
   try {
     await getSesClient().send(
       new SendEmailCommand({
-        FromEmailAddress: 'order@mailpdf.online',
+        FromEmailAddress: 'Mail a PDF Online <order@mailpdf.online>',
         Destination: {
           ToAddresses: [email]
         },

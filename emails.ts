@@ -105,15 +105,8 @@ export const buildTrackingEmail = ({
     : '📫 Your document has been mailed'
 
   const addressLines = formatAddressLines(toAddress)
-  const textLines = [
-    'Your document is on its way.',
-    '',
-    'We mailed your document to:',
-    ...addressLines,
-    ''
-  ]
+  const textLines = ['We mailed your document to:', ...addressLines, '']
   const htmlParts = [
-    '<p style="margin: 0 0 16px;">Your document is on its way.</p>',
     '<p style="margin: 0 0 4px;">We mailed your document to:</p>',
     `<p style="margin: 0 0 16px;">${addressLines.map(escapeHtml).join('<br>')}</p>`
   ]
