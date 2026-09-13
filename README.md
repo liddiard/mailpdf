@@ -225,8 +225,3 @@ server {
 - POST /checkout
 - POST /finalize
 - GET /track/{packageID}
-
-## Todo
-
-- Email sending
-- Testing

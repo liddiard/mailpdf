@@ -438,17 +438,22 @@ router.post('/finalize', async (req: Request, res: Response) => {
   res.status(204).send()
   // email user with tracking link or number
   if (extraService) {
-    await emailTracking(email, toAddress, lobRes.tracking_number ?? '', true)
+    await emailTracking(email, toAddress, lobRes.tracking_number ?? '', true, demo)
   } else {
-    await emailTracking(email, toAddress, lobRes.id, false)
+    await emailTracking(email, toAddress, lobRes.id, false, demo)
   }
 })
 
 router.get('/track/:trackingNumber', async (req: Request, res: Response) => {
   const trackingNumber = String(req.params.trackingNumber)
+  // IMPORTANT: use Lob's test/sandbox environment when "demo" is present in
+  // the query string, so tracking works for demo-mode letters. The link in the
+  // confirmation email carries this param.
+  const demo = req.query.demo !== undefined
+  const lob = demo ? LobTest : LobLive
   let letter: LobLetter
   try {
-    letter = await LobLive.letters.retrieve(trackingNumber)
+    letter = await lob.letters.retrieve(trackingNumber)
   } catch (err) {
     if (statusCodeOf(err) === 404) {
       return res.render('tracking.mustache', { notFound: true, id: trackingNumber })
@@ -784,16 +789,19 @@ async function emailAdmin(subject: string, body: string): Promise<void> {
  * @param toAddress destination address
  * @param trackingNumber Lob letter id or USPS tracking number
  * @param uspsTracking whether the tracking number is a USPS number
+ * @param demo whether the letter was created in Lob's test/sandbox mode, in
+ * which case the tracking link includes a "demo" query param
  */
 async function emailTracking(
   email: string,
   toAddress: Address,
   trackingNumber: string,
-  uspsTracking: boolean
+  uspsTracking: boolean,
+  demo: boolean
 ): Promise<void> {
   const trackUrl = uspsTracking
     ? `https://tools.usps.com/go/TrackConfirmAction?qtc_tLabels1=${trackingNumber}`
-    : `https://mailpdf.online/track/${trackingNumber}`
+    : `https://mailpdf.online/track/${trackingNumber}${demo ? '?demo' : ''}`
   const { subject, text, html } = buildTrackingEmail({
     toAddress,
     trackingNumber,
