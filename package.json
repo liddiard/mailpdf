@@ -9,6 +9,7 @@
     "dev:client": "vite",
     "build": "npm run typecheck && vite build",
     "start": "node --env-file-if-exists=.env bin/www.ts",
+    "test": "node --test --test-reporter=spec \"*.test.ts\" \"routes/**/*.test.ts\"",
     "typecheck": "tsc -p tsconfig.app.json && tsc -p tsconfig.node.json",
     "lint": "eslint .",
     "format": "prettier --write .",
