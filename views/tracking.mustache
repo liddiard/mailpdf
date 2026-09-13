@@ -10,8 +10,13 @@
 
     <style>
 
+      :root {
+        --primary: oklch(0.3169 0.0952 256.22);
+        --text-shadow: 0 0 5px rgb(0 0 0 / 0.25);
+      }
+
       body {
-        background-color: #30c9e8;
+        background-color: var(--primary);
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
         margin: 0 auto;
         border: 0;
@@ -19,7 +24,7 @@
         -webkit-font-smoothing: antialiased;
         max-width: 640px;
         color: white;
-        text-shadow: 0 0 5px rgba(0, 0, 0, 0.25);
+        text-shadow: var(--text-shadow);
         line-height: 1.4;
       }
       
@@ -30,7 +35,7 @@
         padding: 1em 2em;
         overflow: hidden;
         margin-top: 1em;
-        box-shadow: 0 0 5px rgba(0, 0, 0, 0.25);
+        box-shadow: 0 0 5px rgb(0 0 0 / 0.25);
       }
 
       h1, h2, h3, h4, h5, h6 {
@@ -44,42 +49,47 @@
         opacity: 0.5;
       }
 
-      .tracking-events ul {
-        list-style-type: none;
-        padding: 0;
-        margin: 0.5em 0;
+      .tracking-events {
+        ul {
+          list-style-type: none;
+          padding: 0;
+          margin: 0.5em 0;
+        }
+
+        li {
+          margin: 0.5em 0;
+        }
+
+        h3 {
+          margin-top: 0;
+        }
+
+        .location,
+        time {
+          display: block;
+        }
+
+        .fa-arrow-up {
+          font-size: 1.5em;
+          opacity: 0.25;
+          display: inline-block;
+          margin-bottom: 0.25em;
+        }
+
+        li:first-child .fa-arrow-up {
+          display: none;
+        }
       }
 
-      .tracking-events li {
-        margin: 0.5em 0;
-      }
+      .details {
+        .address {
+          float: left;
+          margin: 1em;
 
-      .tracking-events h3 {
-        margin-top: 0;
-      }
-
-      .tracking-events .location, .tracking-events time {
-        display: block;
-      }
-
-      .tracking-events .fa-arrow-up {
-        font-size: 1.5em;
-        opacity: 0.25;
-        display: inline-block;
-        margin-bottom: 0.25em;
-      }
-
-      .tracking-events li:first-child .fa-arrow-up {
-        display: none;
-      }
-
-      .details .address {
-        float: left;
-        margin: 1em;
-      }
-
-      .details .address h3 {
-        margin-top: 0;
+          h3 {
+            margin-top: 0;
+          }
+        }
       }
 
     </style>

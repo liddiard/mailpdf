@@ -1,31 +1,73 @@
 {
-  "name": "project-enviar",
+  "name": "mailpdf",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "start": "node ./bin/www"
+    "dev": "concurrently -n server,client -c blue,magenta \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "node --env-file-if-exists=.env --watch bin/www.ts",
+    "dev:client": "vite",
+    "build": "npm run typecheck && vite build",
+    "start": "node --env-file-if-exists=.env bin/www.ts",
+    "test": "node --test --test-reporter=spec \"*.test.ts\" \"routes/**/*.test.ts\"",
+    "typecheck": "tsc -p tsconfig.app.json && tsc -p tsconfig.node.json",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,json,css,html,md}": [
+      "prettier --write"
+    ]
   },
   "engines": {
-    "npm": "3.10.5",
-    "node": "6.6.0"
+    "node": ">=24.15.0",
+    "npm": ">=11.5.1"
   },
   "dependencies": {
-    "body-parser": "~1.15.1",
-    "connect-busboy": "0.0.2",
-    "cookie-parser": "~1.4.3",
-    "debug": "~2.2.0",
-    "express": "~4.13.4",
-    "express-rate-limit": "^2.5.0",
-    "ghostscript-js": "^0.2.2",
-    "lob": "^3.9.0",
-    "moment": "^2.15.1",
-    "morgan": "~1.7.0",
-    "multer": "^1.2.0",
-    "mustache-express": "^1.2.2",
-    "request": "^2.75.0",
-    "sendgrid": "^4.4.0",
-    "serve-favicon": "~2.3.0",
-    "stripe": "^4.11.0",
-    "zipcodes": "^2.1.0"
+    "@aws-sdk/client-sesv2": "^3.1129.0",
+    "@stripe/react-stripe-js": "^6.9.0",
+    "@stripe/stripe-js": "^9.16.0",
+    "debug": "^4.4.3",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
+    "lob": "^8.1.1",
+    "morgan": "^1.12.0",
+    "multer": "^2.3.0",
+    "mustache-express": "^1.3.2",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "stripe": "^22.6.1",
+    "zipcodes": "^8.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/debug": "^4.1.13",
+    "@types/express": "^5.0.6",
+    "@types/morgan": "^1.9.10",
+    "@types/multer": "^2.2.0",
+    "@types/mustache-express": "^1.2.5",
+    "@types/node": "^26.5.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/zipcodes": "^8.0.5",
+    "@vitejs/plugin-react": "^6.1.1",
+    "concurrently": "^10.0.5",
+    "eslint": "^10.10.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.6",
+    "globals": "^17.12.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.1",
+    "prettier": "^3.9.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.70.0",
+    "vite": "^8.2.2"
   }
 }

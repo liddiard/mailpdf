@@ -1,0 +1,53 @@
+name: mailpdf
+
+services:
+  app:
+    build:
+      context: .
+      target: runtime
+    image: mailpdf:latest
+    init: true
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Force production behavior (rate limiting, no stack traces) regardless
+      # of what the local .env contains. PORT is set explicitly so the server
+      # always listens on the same port that compose publishes.
+      NODE_ENV: production
+      PORT: ${PORT:-6245}
+    ports:
+      - '${PORT:-6245}:${PORT:-6245}'
+    volumes:
+      # Uploaded PDFs must persist between requests (read back during /finalize).
+      - uploads:/app/uploads
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:'+(process.env.PORT||'6245')+'/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Deletes uploads older than one day, replacing the Dokku one-off documented
+  # in the README. Runs as root so it can remove files owned by `node`.
+  cleanup:
+    image: alpine:3.20
+    init: true
+    restart: unless-stopped
+    volumes:
+      - uploads:/uploads
+    command:
+      - sh
+      - -c
+      - 'while true; do find /uploads -type f -mtime +1 -delete; sleep 3600; done'
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  uploads:

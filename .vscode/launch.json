@@ -2,18 +2,14 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Iniciar",
+      "name": "Launch server",
       "type": "node",
       "request": "launch",
-      "program": "${workspaceRoot}/bin/www",
+      "program": "${workspaceRoot}/bin/www.ts",
       "stopOnEntry": false,
       "args": [],
       "cwd": "${workspaceRoot}",
-      "preLaunchTask": null,
-      "runtimeExecutable": null,
-      "runtimeArgs": [
-        "--nolazy"
-      ],
+      "runtimeArgs": ["--nolazy"],
       "env": {
         "NODE_ENV": "development"
       },
@@ -22,7 +18,7 @@
       "outDir": null
     },
     {
-      "name": "Asociar",
+      "name": "Attach",
       "type": "node",
       "request": "attach",
       "port": 3000,
@@ -32,15 +28,6 @@
       "outDir": null,
       "localRoot": "${workspaceRoot}",
       "remoteRoot": null
-    },
-    {
-      "name": "Asociar al proceso",
-      "type": "node",
-      "request": "attach",
-      "processId": "${command.PickProcess}",
-      "port": 3000,
-      "sourceMaps": false,
-      "outDir": null
     }
   ]
 }
